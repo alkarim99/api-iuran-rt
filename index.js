@@ -3,7 +3,8 @@ const express = require("express")
 const app = express()
 const bodyParser = require("body-parser")
 
-const invalidRoutes = require("./routes/404.routes")
+const wargasRoutes = require("./routes/wargas.route")
+const invalidRoutes = require("./routes/404.route")
 
 const helmet = require("helmet")
 const xss = require("xss-clean")
@@ -21,7 +22,7 @@ app.use(xss())
 app.use(cors())
 
 // Routes
-// app.use(usersRoutes)
+app.use(wargasRoutes)
 
 // Home
 app.get("/", (req, res) => {

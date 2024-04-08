@@ -34,6 +34,7 @@ const isAddressDuplicate = async (id, address) => {
     if (id) {
       query._id = { $ne: new ObjectId(id) } // Exclude the current warga ID when checking for duplicates during update
     }
+    await client.connect()
     const existingWarga = await collectionWarga.findOne(query)
     return !!existingWarga
   } catch (err) {

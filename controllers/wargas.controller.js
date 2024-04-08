@@ -42,11 +42,18 @@ const create = async (req, res) => {
   try {
     const data = req.body
     const insertedId = await model.create(data)
-    res.send({
-      status: true,
-      message: "Warga created successfully",
-      insertedId,
-    })
+    if (insertedId) {
+      res.send({
+        status: true,
+        message: "Warga created successfully",
+        insertedId,
+      })
+    } else {
+      res.status(400).send({
+        status: false,
+        message: "Failed to create warga. Duplicate address found.",
+      })
+    }
   } catch (err) {
     console.error(err)
     res.status(500).send({
@@ -69,7 +76,7 @@ const update = async (req, res) => {
     } else {
       res.status(404).send({
         status: false,
-        message: "Warga not found or no changes applied",
+        message: "Failed to update warga. Data not found or Duplicate address found.",
       })
     }
   } catch (err) {

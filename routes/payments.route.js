@@ -2,6 +2,7 @@ const router = require("express").Router()
 const paymentsController = require("../controllers/payments.controller")
 
 router.get("/payments/warga/:id", paymentsController.getByWargaID)
+router.get("/payments/total", paymentsController.getTotalIncome)
 router.get("/payments/:id", paymentsController.getByID)
 router.get("/payments", paymentsController.getAll)
 router.post("/payments", paymentsController.create)

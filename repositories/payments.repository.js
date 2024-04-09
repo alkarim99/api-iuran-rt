@@ -31,8 +31,36 @@ const getByID = async (id) => {
 const getByWargaID = async (id) => {
   try {
     await client.connect()
-    const data = await collectionPayment.find({ warga_id: new ObjectId(id) }).toArray()
+    const data = await collectionPayment
+      .find({ warga_id: new ObjectId(id) })
+      .toArray()
     return data
+  } catch (err) {
+    console.error("Error connecting to MongoDB:", err)
+    throw err
+  } finally {
+    client.close()
+  }
+}
+
+const getTotalIncome = async (start, end) => {
+  try {
+    await client.connect()
+    const data = await collectionPayment
+      .find(
+        {
+          pay_at: { $gte: new Date(start), $lte: new Date(end) },
+        },
+        {
+          projection: { nominal: 1, _id: 0 }, // Include only the nominal field
+        }
+      )
+      .toArray()
+    let totalIncome = 0
+    data.forEach((payment) => {
+      totalIncome += parseInt(payment.nominal)
+    })
+    return totalIncome
   } catch (err) {
     console.error("Error connecting to MongoDB:", err)
     throw err
@@ -90,6 +118,7 @@ module.exports = {
   getAll,
   getByID,
   getByWargaID,
+  getTotalIncome,
   create,
   update,
   deletePayment,

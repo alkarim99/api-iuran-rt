@@ -101,6 +101,25 @@ const getByWargaID = async (req, res) => {
   }
 }
 
+const getTotalIncome = async (req, res) => {
+  try {
+    const { start, end } = req.body
+    const total_income = await model.getTotalIncome(start, end)
+    res.send({
+      status: true,
+      message: "Get data success",
+      total_income,
+    })
+  } catch (err) {
+    console.log(err)
+    res.status(500).send({
+      status: false,
+      message: "Error fetching data",
+      error: err.message,
+    })
+  }
+}
+
 const create = async (req, res) => {
   try {
     const data = req.body
@@ -199,6 +218,7 @@ module.exports = {
   getAll,
   getByID,
   getByWargaID,
+  getTotalIncome,
   create,
   update,
   deletePayment,

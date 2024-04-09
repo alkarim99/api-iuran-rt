@@ -28,6 +28,19 @@ const getByID = async (id) => {
   }
 }
 
+const getByWargaID = async (id) => {
+  try {
+    await client.connect()
+    const data = await collectionPayment.find({ warga_id: new ObjectId(id) }).toArray()
+    return data
+  } catch (err) {
+    console.error("Error connecting to MongoDB:", err)
+    throw err
+  } finally {
+    client.close()
+  }
+}
+
 const create = async (data) => {
   try {
     const payment = entity.paymentEntity(data)
@@ -76,6 +89,7 @@ const deletePayment = async (id) => {
 module.exports = {
   getAll,
   getByID,
+  getByWargaID,
   create,
   update,
   deletePayment,

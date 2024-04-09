@@ -34,6 +34,12 @@ const validationData = (data) => {
       message: "Bad Request. Param payment_method not valid.",
     })
   }
+  if (!data?.pay_at) {
+    return res.status(400).send({
+      status: false,
+      message: "Bad Request. Param period_start not found.",
+    })
+  }
 }
 
 const getAll = async (req, res) => {
@@ -59,6 +65,27 @@ const getByID = async (req, res) => {
       params: { id },
     } = req
     const data = await model.getByID(id)
+    res.send({
+      status: true,
+      message: "Get data success",
+      data,
+    })
+  } catch (err) {
+    console.log(err)
+    res.status(500).send({
+      status: false,
+      message: "Error fetching data",
+      error: err.message,
+    })
+  }
+}
+
+const getByWargaID = async (req, res) => {
+  try {
+    const {
+      params: { id },
+    } = req
+    const data = await model.getByWargaID(id)
     res.send({
       status: true,
       message: "Get data success",
@@ -168,4 +195,11 @@ const deletePayment = async (req, res) => {
   }
 }
 
-module.exports = { getAll, getByID, create, update, deletePayment }
+module.exports = {
+  getAll,
+  getByID,
+  getByWargaID,
+  create,
+  update,
+  deletePayment,
+}

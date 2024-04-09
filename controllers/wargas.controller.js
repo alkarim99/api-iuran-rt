@@ -41,6 +41,20 @@ const getByID = async (req, res) => {
 const create = async (req, res) => {
   try {
     const data = req.body
+    if (!data?.name) {
+      res.status(400).send({
+        status: false,
+        message: "Error creating data",
+        error: "Bad Request. Param name not found.",
+      })
+    }
+    if (!data?.address) {
+      res.status(400).send({
+        status: false,
+        message: "Error creating data",
+        error: "Bad Request. Param address not found.",
+      })
+    }
     const insertedId = await model.create(data)
     if (insertedId) {
       res.send({
@@ -76,7 +90,8 @@ const update = async (req, res) => {
     } else {
       res.status(404).send({
         status: false,
-        message: "Failed to update warga. Data not found or Duplicate address found.",
+        message:
+          "Failed to update warga. Data not found or Duplicate address found.",
       })
     }
   } catch (err) {

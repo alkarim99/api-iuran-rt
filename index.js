@@ -4,6 +4,7 @@ const app = express()
 const bodyParser = require("body-parser")
 
 const wargasRoutes = require("./routes/wargas.route")
+const paymentsRoutes = require("./routes/payments.route")
 const invalidRoutes = require("./routes/404.route")
 
 const helmet = require("helmet")
@@ -23,6 +24,7 @@ app.use(cors())
 
 // Routes
 app.use(wargasRoutes)
+app.use(paymentsRoutes)
 
 // Home
 app.get("/", (req, res) => {

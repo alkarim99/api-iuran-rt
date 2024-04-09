@@ -69,19 +69,39 @@ const getTotalIncome = async (start, end) => {
   }
 }
 
+const getLatestPeriodByWargaID = async (id) => {
+  try {
+    await client.connect()
+    const data = await collectionPayment.findOne(
+      { warga_id: new ObjectId(id) },
+      { sort: { pay_at: -1 }, projection: { period_end: 1, _id: 0 } }
+    )
+    return data?.period_end
+  } catch (err) {
+    console.error("Error connecting to MongoDB:", err)
+    throw err
+  } finally {
+    client.close()
+  }
+}
+
 const create = async (data) => {
   try {
+    await client.connect()
     const payment = entity.paymentEntity(data)
     const result = await collectionPayment.insertOne(payment)
     return result.insertedId
   } catch (err) {
     console.error("Error creating payment:", err)
     throw err
+  } finally {
+    client.close()
   }
 }
 
 const update = async (data) => {
   try {
+    await client.connect()
     const updateData = {
       $set: {
         warga_id: data?.warga_id,
@@ -101,16 +121,21 @@ const update = async (data) => {
   } catch (err) {
     console.error("Error updating payment:", err)
     throw err
+  } finally {
+    client.close()
   }
 }
 
 const deletePayment = async (id) => {
   try {
+    await client.connect()
     const result = await collectionPayment.deleteOne({ _id: new ObjectId(id) })
     return result.deletedCount > 0 // Return true if a document was deleted
   } catch (err) {
     console.error("Error deleting payment:", err)
     throw err
+  } finally {
+    client.close()
   }
 }
 
@@ -119,6 +144,7 @@ module.exports = {
   getByID,
   getByWargaID,
   getTotalIncome,
+  getLatestPeriodByWargaID,
   create,
   update,
   deletePayment,

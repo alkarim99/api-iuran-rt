@@ -45,6 +45,7 @@ const isAddressDuplicate = async (id, address) => {
 
 const create = async (data) => {
   try {
+    await client.connect()
     const isDuplicate = await isAddressDuplicate(null, data?.address)
     if (isDuplicate) {
       return false
@@ -55,11 +56,14 @@ const create = async (data) => {
   } catch (err) {
     console.error("Error creating warga:", err)
     throw err
+  } finally {
+    client.close()
   }
 }
 
 const update = async (data) => {
   try {
+    await client.connect()
     const isDuplicate = await isAddressDuplicate(data?.id, data?.address)
     if (isDuplicate) {
       return false
@@ -79,16 +83,21 @@ const update = async (data) => {
   } catch (err) {
     console.error("Error updating warga:", err)
     throw err
+  } finally {
+    client.close()
   }
 }
 
 const deleteWarga = async (id) => {
   try {
+    await client.connect()
     const result = await collectionWarga.deleteOne({ _id: new ObjectId(id) })
     return result.deletedCount > 0 // Return true if a document was deleted
   } catch (err) {
     console.error("Error deleting warga:", err)
     throw err
+  } finally {
+    client.close()
   }
 }
 

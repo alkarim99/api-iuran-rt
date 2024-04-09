@@ -42,6 +42,42 @@ const validationData = (data) => {
   }
 }
 
+const getAllMonthsBetween = (data) => {
+  const result = []
+
+  const nominal = data?.nominal / data?.number_of_period
+
+  // Start from periodStart and iterate until periodEnd
+  let currentDate = new Date(data?.period_start)
+  const endDate = new Date(data?.period_end)
+
+  // Iterate over each date
+  while (currentDate <= endDate) {
+    // Extract month and year from the current date
+    const month = currentDate.toLocaleString("default", { month: "long" })
+    const year = currentDate.getFullYear()
+
+    // Format month and year as a string (e.g., "April 2024")
+    const monthYear = `${month} ${year}`
+
+    const document = {
+      period: monthYear,
+      nominal,
+      pay_at: data?.pay_at,
+    }
+
+    // Add the unique combination of month and year to the array
+    if (!result.includes(monthYear)) {
+      result.push(document)
+    }
+
+    // Move to the next month
+    currentDate.setMonth(currentDate.getMonth() + 1)
+  }
+
+  return result
+}
+
 const getAll = async (req, res) => {
   try {
     const data = await model.getAll()
@@ -109,6 +145,54 @@ const getTotalIncome = async (req, res) => {
       status: true,
       message: "Get data success",
       total_income,
+    })
+  } catch (err) {
+    console.log(err)
+    res.status(500).send({
+      status: false,
+      message: "Error fetching data",
+      error: err.message,
+    })
+  }
+}
+
+const getLatestPeriodByWargaID = async (req, res) => {
+  try {
+    const {
+      params: { id },
+    } = req
+    const latest_period = await model.getLatestPeriodByWargaID(id)
+    res.send({
+      status: true,
+      message: "Get data success",
+      latest_period,
+    })
+  } catch (err) {
+    console.log(err)
+    res.status(500).send({
+      status: false,
+      message: "Error fetching data",
+      error: err.message,
+    })
+  }
+}
+
+const getReports = async (req, res) => {
+  try {
+    const {
+      params: { id },
+    } = req
+    const data = await model.getByWargaID(id)
+    let reports = []
+    data.forEach((payment) => {
+      const months = getAllMonthsBetween(payment)
+      reports.push(months)
+    })
+    reports = reports.reduce((acc, val) => acc.concat(val), [])
+    res.send({
+      status: true,
+      message: "Get data success",
+      reports,
     })
   } catch (err) {
     console.log(err)
@@ -219,6 +303,8 @@ module.exports = {
   getByID,
   getByWargaID,
   getTotalIncome,
+  getLatestPeriodByWargaID,
+  getReports,
   create,
   update,
   deletePayment,

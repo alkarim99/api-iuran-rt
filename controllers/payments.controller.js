@@ -1,4 +1,6 @@
 const model = require("../repositories/payments.repository")
+const jwt = require("jsonwebtoken")
+const { getToken } = require("../middleware/jwt.middleware")
 
 const validationData = (data) => {
   if (!data?.warga_id) {
@@ -80,12 +82,25 @@ const getAllMonthsBetween = (data) => {
 
 const getAll = async (req, res) => {
   try {
-    const data = await model.getAll()
-    res.send({
-      status: true,
-      message: "Get data success",
-      data,
-    })
+    jwt.verify(
+      getToken(req),
+      process.env.JWT_PRIVATE_KEY,
+      async (err, { _id, role }) => {
+        if (role == "admin") {
+          const data = await model.getAll()
+          res.send({
+            status: true,
+            message: "Get data success",
+            data,
+          })
+        } else {
+          res.status(401).send({
+            status: false,
+            message: "Unauthorized",
+          })
+        }
+      }
+    )
   } catch (err) {
     res.status(500).send({
       status: false,
@@ -97,15 +112,28 @@ const getAll = async (req, res) => {
 
 const getByID = async (req, res) => {
   try {
-    const {
-      params: { id },
-    } = req
-    const data = await model.getByID(id)
-    res.send({
-      status: true,
-      message: "Get data success",
-      data,
-    })
+    jwt.verify(
+      getToken(req),
+      process.env.JWT_PRIVATE_KEY,
+      async (err, { _id, role }) => {
+        if (role == "admin") {
+          const {
+            params: { id },
+          } = req
+          const data = await model.getByID(id)
+          res.send({
+            status: true,
+            message: "Get data success",
+            data,
+          })
+        } else {
+          res.status(401).send({
+            status: false,
+            message: "Unauthorized",
+          })
+        }
+      }
+    )
   } catch (err) {
     console.log(err)
     res.status(500).send({
@@ -118,15 +146,28 @@ const getByID = async (req, res) => {
 
 const getByWargaID = async (req, res) => {
   try {
-    const {
-      params: { id },
-    } = req
-    const data = await model.getByWargaID(id)
-    res.send({
-      status: true,
-      message: "Get data success",
-      data,
-    })
+    jwt.verify(
+      getToken(req),
+      process.env.JWT_PRIVATE_KEY,
+      async (err, { _id, role }) => {
+        if (role == "admin") {
+          const {
+            params: { id },
+          } = req
+          const data = await model.getByWargaID(id)
+          res.send({
+            status: true,
+            message: "Get data success",
+            data,
+          })
+        } else {
+          res.status(401).send({
+            status: false,
+            message: "Unauthorized",
+          })
+        }
+      }
+    )
   } catch (err) {
     console.log(err)
     res.status(500).send({
@@ -139,13 +180,26 @@ const getByWargaID = async (req, res) => {
 
 const getTotalIncome = async (req, res) => {
   try {
-    const { start, end } = req.body
-    const total_income = await model.getTotalIncome(start, end)
-    res.send({
-      status: true,
-      message: "Get data success",
-      total_income,
-    })
+    jwt.verify(
+      getToken(req),
+      process.env.JWT_PRIVATE_KEY,
+      async (err, { _id, role }) => {
+        if (role == "admin") {
+          const { start, end } = req.body
+          const total_income = await model.getTotalIncome(start, end)
+          res.send({
+            status: true,
+            message: "Get data success",
+            total_income,
+          })
+        } else {
+          res.status(401).send({
+            status: false,
+            message: "Unauthorized",
+          })
+        }
+      }
+    )
   } catch (err) {
     console.log(err)
     res.status(500).send({
@@ -158,15 +212,28 @@ const getTotalIncome = async (req, res) => {
 
 const getLatestPeriodByWargaID = async (req, res) => {
   try {
-    const {
-      params: { id },
-    } = req
-    const latest_period = await model.getLatestPeriodByWargaID(id)
-    res.send({
-      status: true,
-      message: "Get data success",
-      latest_period,
-    })
+    jwt.verify(
+      getToken(req),
+      process.env.JWT_PRIVATE_KEY,
+      async (err, { _id, role }) => {
+        if (role == "admin") {
+          const {
+            params: { id },
+          } = req
+          const latest_period = await model.getLatestPeriodByWargaID(id)
+          res.send({
+            status: true,
+            message: "Get data success",
+            latest_period,
+          })
+        } else {
+          res.status(401).send({
+            status: false,
+            message: "Unauthorized",
+          })
+        }
+      }
+    )
   } catch (err) {
     console.log(err)
     res.status(500).send({
@@ -179,21 +246,34 @@ const getLatestPeriodByWargaID = async (req, res) => {
 
 const getReports = async (req, res) => {
   try {
-    const {
-      params: { id },
-    } = req
-    const data = await model.getByWargaID(id)
-    let reports = []
-    data.forEach((payment) => {
-      const months = getAllMonthsBetween(payment)
-      reports.push(months)
-    })
-    reports = reports.reduce((acc, val) => acc.concat(val), [])
-    res.send({
-      status: true,
-      message: "Get data success",
-      reports,
-    })
+    jwt.verify(
+      getToken(req),
+      process.env.JWT_PRIVATE_KEY,
+      async (err, { _id, role }) => {
+        if (role == "admin") {
+          const {
+            params: { id },
+          } = req
+          const data = await model.getByWargaID(id)
+          let reports = []
+          data.forEach((payment) => {
+            const months = getAllMonthsBetween(payment)
+            reports.push(months)
+          })
+          reports = reports.reduce((acc, val) => acc.concat(val), [])
+          res.send({
+            status: true,
+            message: "Get data success",
+            reports,
+          })
+        } else {
+          res.status(401).send({
+            status: false,
+            message: "Unauthorized",
+          })
+        }
+      }
+    )
   } catch (err) {
     console.log(err)
     res.status(500).send({
@@ -206,25 +286,39 @@ const getReports = async (req, res) => {
 
 const create = async (req, res) => {
   try {
-    const data = req.body
-    validationData(data)
-    const period_start = new Date(data?.period_start)
-    const period_end = new Date(data?.period_end)
-    const number_of_period = period_end.getMonth() - period_start.getMonth() + 1
-    data.number_of_period = number_of_period
-    const insertedId = await model.create(data)
-    if (insertedId) {
-      res.send({
-        status: true,
-        message: "Payment created successfully",
-        insertedId,
-      })
-    } else {
-      res.status(400).send({
-        status: false,
-        message: "Failed to create payment.",
-      })
-    }
+    jwt.verify(
+      getToken(req),
+      process.env.JWT_PRIVATE_KEY,
+      async (err, { _id, role }) => {
+        if (role == "admin") {
+          const data = req.body
+          validationData(data)
+          const period_start = new Date(data?.period_start)
+          const period_end = new Date(data?.period_end)
+          const number_of_period =
+            period_end.getMonth() - period_start.getMonth() + 1
+          data.number_of_period = number_of_period
+          const insertedId = await model.create(data)
+          if (insertedId) {
+            res.send({
+              status: true,
+              message: "Payment created successfully",
+              insertedId,
+            })
+          } else {
+            res.status(400).send({
+              status: false,
+              message: "Failed to create payment.",
+            })
+          }
+        } else {
+          res.status(401).send({
+            status: false,
+            message: "Unauthorized",
+          })
+        }
+      }
+    )
   } catch (err) {
     console.error(err)
     res.status(500).send({
@@ -237,30 +331,44 @@ const create = async (req, res) => {
 
 const update = async (req, res) => {
   try {
-    const data = req.body
-    if (!data?.id) {
-      return res.status(400).send({
-        status: false,
-        message: "Bad Request. Param id not found.",
-      })
-    }
-    validationData(data)
-    const period_start = new Date(data?.period_start)
-    const period_end = new Date(data?.period_end)
-    const number_of_period = period_end.getMonth() - period_start.getMonth() + 1
-    data.number_of_period = number_of_period
-    const isUpdated = await model.update(data)
-    if (isUpdated) {
-      res.send({
-        status: true,
-        message: "Payment updated successfully",
-      })
-    } else {
-      res.status(404).send({
-        status: false,
-        message: "Failed to update payment. Data not found.",
-      })
-    }
+    jwt.verify(
+      getToken(req),
+      process.env.JWT_PRIVATE_KEY,
+      async (err, { _id, role }) => {
+        if (role == "admin") {
+          const data = req.body
+          if (!data?.id) {
+            return res.status(400).send({
+              status: false,
+              message: "Bad Request. Param id not found.",
+            })
+          }
+          validationData(data)
+          const period_start = new Date(data?.period_start)
+          const period_end = new Date(data?.period_end)
+          const number_of_period =
+            period_end.getMonth() - period_start.getMonth() + 1
+          data.number_of_period = number_of_period
+          const isUpdated = await model.update(data)
+          if (isUpdated) {
+            res.send({
+              status: true,
+              message: "Payment updated successfully",
+            })
+          } else {
+            res.status(404).send({
+              status: false,
+              message: "Failed to update payment. Data not found.",
+            })
+          }
+        } else {
+          res.status(401).send({
+            status: false,
+            message: "Unauthorized",
+          })
+        }
+      }
+    )
   } catch (err) {
     console.error(err)
     res.status(500).send({
@@ -273,21 +381,34 @@ const update = async (req, res) => {
 
 const deletePayment = async (req, res) => {
   try {
-    const {
-      params: { id },
-    } = req
-    const isDeleted = await model.deletePayment(id)
-    if (isDeleted) {
-      res.send({
-        status: true,
-        message: "Payment deleted successfully",
-      })
-    } else {
-      res.status(404).send({
-        status: false,
-        message: "Payment not found or no changes applied",
-      })
-    }
+    jwt.verify(
+      getToken(req),
+      process.env.JWT_PRIVATE_KEY,
+      async (err, { _id, role }) => {
+        if (role == "admin") {
+          const {
+            params: { id },
+          } = req
+          const isDeleted = await model.deletePayment(id)
+          if (isDeleted) {
+            res.send({
+              status: true,
+              message: "Payment deleted successfully",
+            })
+          } else {
+            res.status(404).send({
+              status: false,
+              message: "Payment not found or no changes applied",
+            })
+          }
+        } else {
+          res.status(401).send({
+            status: false,
+            message: "Unauthorized",
+          })
+        }
+      }
+    )
   } catch (err) {
     console.log(err)
     res.status(500).send({

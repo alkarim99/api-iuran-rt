@@ -1,6 +1,8 @@
 const bcrypt = require("bcrypt")
 const saltRounds = 10
 const model = require("../repositories/users.repository")
+const jwt = require("jsonwebtoken")
+const { getToken } = require("../middleware/jwt.middleware")
 
 const validationData = (data) => {
   if (!data?.name) {
@@ -31,12 +33,27 @@ const validationData = (data) => {
 
 const getAll = async (req, res) => {
   try {
-    const data = await model.getAll()
-    res.send({
-      status: true,
-      message: "Get data success",
-      data,
-    })
+    jwt.verify(
+      getToken(req),
+      process.env.JWT_PRIVATE_KEY,
+      async (err, { _id, role }) => {
+        if (role == "admin") {
+          const data = await model.getAll()
+          res.send({
+            status: true,
+            message: "Get data success",
+            data,
+          })
+        } else {
+          const data = await model.getByID(_id)
+          res.send({
+            status: true,
+            message: "Get data success",
+            data,
+          })
+        }
+      }
+    )
   } catch (err) {
     res.status(500).send({
       status: false,
@@ -48,15 +65,27 @@ const getAll = async (req, res) => {
 
 const getByID = async (req, res) => {
   try {
-    const {
-      params: { id },
-    } = req
-    const data = await model.getByID(id)
-    res.send({
-      status: true,
-      message: "Get data success",
-      data,
-    })
+    jwt.verify(
+      getToken(req),
+      process.env.JWT_PRIVATE_KEY,
+      async (err, { _id, role }) => {
+        let idData
+        if (role == "admin") {
+          const {
+            params: { id },
+          } = req
+          idData = id
+        } else {
+          idData = _id
+        }
+        const data = await model.getByID(idData)
+        res.send({
+          status: true,
+          message: "Get data success",
+          data,
+        })
+      }
+    )
   } catch (err) {
     console.log(err)
     res.status(500).send({
@@ -69,13 +98,19 @@ const getByID = async (req, res) => {
 
 const getByEmail = async (req, res) => {
   try {
-    const { email } = req.body
-    const data = await model.getByEmail(email)
-    res.send({
-      status: true,
-      message: "Get data success",
-      data,
-    })
+    jwt.verify(
+      getToken(req),
+      process.env.JWT_PRIVATE_KEY,
+      async (err, { _id, role }) => {
+        const { email } = req.body
+        const data = await model.getByEmail(email)
+        res.send({
+          status: true,
+          message: "Get data success",
+          data,
+        })
+      }
+    )
   } catch (err) {
     console.log(err)
     res.status(500).send({
@@ -121,26 +156,35 @@ const create = async (req, res) => {
 
 const update = async (req, res) => {
   try {
-    const data = req.body
-    validationData(data)
-    bcrypt.genSalt(saltRounds, function (err, salt) {
-      bcrypt.hash(data?.password, salt, async function (err, hash) {
-        // Store hash in your password DB.
-        data.password = hash
-        const isUpdated = await model.update(data)
-        if (isUpdated) {
-          res.send({
-            status: true,
-            message: "User updated successfully",
-          })
-        } else {
-          res.status(404).send({
-            status: false,
-            message: "Failed to update user. Data not found.",
-          })
+    jwt.verify(
+      getToken(req),
+      process.env.JWT_PRIVATE_KEY,
+      async (err, { _id, role }) => {
+        const data = req.body
+        if (role != "admin") {
+          data.id = _id
         }
-      })
-    })
+        validationData(data)
+        bcrypt.genSalt(saltRounds, function (err, salt) {
+          bcrypt.hash(data?.password, salt, async function (err, hash) {
+            // Store hash in your password DB.
+            data.password = hash
+            const isUpdated = await model.update(data)
+            if (isUpdated) {
+              res.send({
+                status: true,
+                message: "User updated successfully",
+              })
+            } else {
+              res.status(404).send({
+                status: false,
+                message: "Failed to update user. Data not found.",
+              })
+            }
+          })
+        })
+      }
+    )
   } catch (err) {
     console.error(err)
     res.status(500).send({
@@ -153,21 +197,33 @@ const update = async (req, res) => {
 
 const deleteUser = async (req, res) => {
   try {
-    const {
-      params: { id },
-    } = req
-    const isDeleted = await model.deleteUser(id)
-    if (isDeleted) {
-      res.send({
-        status: true,
-        message: "User deleted successfully",
-      })
-    } else {
-      res.status(404).send({
-        status: false,
-        message: "User not found or no changes applied",
-      })
-    }
+    jwt.verify(
+      getToken(req),
+      process.env.JWT_PRIVATE_KEY,
+      async (err, { _id, role }) => {
+        let idDelete
+        if (role == "admin") {
+          const {
+            params: { id },
+          } = req
+          idDelete = id
+        } else {
+          idDelete = _id
+        }
+        const isDeleted = await model.deleteUser(idDelete)
+        if (isDeleted) {
+          res.send({
+            status: true,
+            message: "User deleted successfully",
+          })
+        } else {
+          res.status(404).send({
+            status: false,
+            message: "User not found or no changes applied",
+          })
+        }
+      }
+    )
   } catch (err) {
     console.log(err)
     res.status(500).send({

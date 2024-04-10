@@ -1,10 +1,11 @@
 const router = require("express").Router()
 const wargasController = require("../controllers/wargas.controller")
+const { checkToken } = require("../middleware/jwt.middleware")
 
-router.get("/wargas/:id", wargasController.getByID)
-router.get("/wargas", wargasController.getAll)
-router.post("/wargas", wargasController.create)
-router.patch("/wargas", wargasController.update)
-router.delete("/wargas/:id", wargasController.deleteWarga)
+router.get("/wargas/:id", checkToken, wargasController.getByID)
+router.get("/wargas", checkToken, wargasController.getAll)
+router.post("/wargas", checkToken, wargasController.create)
+router.patch("/wargas", checkToken, wargasController.update)
+router.delete("/wargas/:id", checkToken, wargasController.deleteWarga)
 
 module.exports = router

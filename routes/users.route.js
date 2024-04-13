@@ -6,7 +6,7 @@ router.get("/users/:id", checkToken, usersController.getByID)
 router.get("/users/email", checkToken, usersController.getByEmail)
 router.get("/users", checkToken, usersController.getAll)
 router.post("/users", checkToken, usersController.create)
-router.put("/users", checkToken, usersController.update)
+router.patch("/users", checkToken, usersController.update)
 router.delete("/users/:id", checkToken, usersController.deleteUser)
 
 module.exports = router

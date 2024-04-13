@@ -23,8 +23,6 @@ const getByID = async (id) => {
   } catch (err) {
     console.error("Error connecting to MongoDB:", err)
     throw err
-  } finally {
-    client.close()
   }
 }
 
@@ -38,6 +36,26 @@ const getByEmail = async (email) => {
     throw err
   } finally {
     client.close()
+  }
+}
+
+const isEmailUnique = async (email, id) => {
+  try {
+    await client.connect()
+    let emails
+    if (id) {
+      emails = await collectionUser.findOne({
+        email,
+        _id: { $ne: new ObjectId(id) },
+      })
+    } else {
+      emails = await collectionUser.findOne({ email })
+    }
+    const isEmailUnique = emails != null
+    return isEmailUnique
+  } catch (err) {
+    console.error("Error connecting to MongoDB:", err)
+    throw err
   }
 }
 
@@ -97,6 +115,7 @@ module.exports = {
   getAll,
   getByID,
   getByEmail,
+  isEmailUnique,
   create,
   update,
   deleteUser,

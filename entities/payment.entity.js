@@ -3,7 +3,7 @@ const { ObjectId } = require("mongodb")
 const paymentEntity = (data) => {
   const payment = {
     _id: new ObjectId(),
-    warga_id: new ObjectId(data?.warga_id),
+    warga: data?.warga,
     period_start: new Date(data?.period_start),
     period_end: new Date(data?.period_end),
     number_of_period: data?.number_of_period,

@@ -161,28 +161,55 @@ const update = async (req, res) => {
       process.env.JWT_PRIVATE_KEY,
       async (err, { _id, role }) => {
         const data = req.body
+        if (!data?.id) {
+          res.status(400).send({
+            status: false,
+            error: "Bad Request. Param id not found.",
+          })
+        }
         if (role != "admin") {
           data.id = _id
         }
-        validationData(data)
-        bcrypt.genSalt(saltRounds, function (err, salt) {
-          bcrypt.hash(data?.password, salt, async function (err, hash) {
-            // Store hash in your password DB.
-            data.password = hash
-            const isUpdated = await model.update(data)
-            if (isUpdated) {
-              res.send({
-                status: true,
-                message: "User updated successfully",
-              })
-            } else {
-              res.status(404).send({
-                status: false,
-                message: "Failed to update user. Data not found.",
-              })
-            }
+        const checkData = await model.getByID(data?.id)
+        const payload = {
+          id: data?.id,
+          name: data?.name ?? checkData?.name,
+          email: data?.email ?? checkData?.email,
+          password: data?.password ?? checkData?.password,
+          role: data?.role ?? checkData?.role,
+        }
+        const isEmailUnique = await model.isEmailUnique(
+          payload?.email,
+          data?.id
+        )
+        if (isEmailUnique) {
+          res.status(400).send({
+            status: false,
+            message: "Email already in use!",
           })
-        })
+        }
+        let isUpdated
+        if (data?.password) {
+          bcrypt.genSalt(saltRounds, function (err, salt) {
+            bcrypt.hash(data?.password, salt, async function (err, hash) {
+              payload.password = hash
+              isUpdated = await model.update(payload)
+            })
+          })
+        } else {
+          isUpdated = await model.update(payload)
+        }
+        if (isUpdated) {
+          res.send({
+            status: true,
+            message: "User updated successfully",
+          })
+        } else {
+          res.status(404).send({
+            status: false,
+            message: "Failed to update user. Data not found.",
+          })
+        }
       }
     )
   } catch (err) {

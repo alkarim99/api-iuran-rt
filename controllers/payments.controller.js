@@ -187,7 +187,8 @@ const getTotalIncome = async (req, res) => {
       process.env.JWT_PRIVATE_KEY,
       async (err, { _id, role }) => {
         if (role == "admin") {
-          const { start, end } = req.body
+          const start = req?.query?.start
+          const end = req?.query?.end
           const total_income = await model.getTotalIncome(start, end)
           res.send({
             status: true,

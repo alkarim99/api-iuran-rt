@@ -2,10 +2,36 @@ const { ObjectId } = require("mongodb")
 const { client, collectionWarga } = require("../config/database")
 const entity = require("../entities/warga.entity")
 
-const getAll = async () => {
+const getAll = async (keyword, sort_by, order = 1) => {
   try {
     await client.connect()
-    const data = await collectionWarga.find({}).toArray()
+    let data, keywordRegex
+    if (keyword) {
+      keywordRegex = new RegExp(keyword, "i")
+    }
+    if (keyword && sort_by) {
+      data = await collectionWarga
+        .find({
+          $or: [{ name: keywordRegex }, { address: keywordRegex }],
+        })
+        .sort({ [sort_by]: [order] })
+        .toArray()
+    } else if (keyword) {
+      data = await collectionWarga
+        .find({
+          $or: [{ name: keywordRegex }, { address: keywordRegex }],
+        })
+        .sort({ address: 1 })
+        .toArray()
+    } else if (sort_by) {
+      data = await collectionWarga
+        .find({})
+        .sort({ [sort_by]: [order] })
+        .toArray()
+    } else {
+      data = await collectionWarga.find({}).sort({ address: 1 }).toArray()
+    }
+
     return data
   } catch (err) {
     console.error("Error connecting to MongoDB:", err)

@@ -299,7 +299,8 @@ const create = async (req, res) => {
           const period_start = new Date(data?.period_start)
           const period_end = new Date(data?.period_end)
           const number_of_period =
-            period_end.getMonth() - period_start.getMonth() + 1
+            (period_end.getFullYear() - period_start.getFullYear()) * 12 +
+            (period_end.getMonth() - period_start.getMonth()) + 1
           data.number_of_period = number_of_period
           const insertedId = await model.create(data)
           if (insertedId) {

@@ -159,6 +159,7 @@ const update = async (data) => {
         number_of_period: data?.number_of_period,
         nominal: data?.nominal,
         payment_method: data?.payment_method,
+        pay_at: data?.pay_at,
         updated_at: new Date(),
       },
     }

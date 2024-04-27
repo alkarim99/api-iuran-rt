@@ -1,14 +1,10 @@
 const { ObjectId } = require("mongodb")
-const {
-  client,
-  collectionPayment,
-  collectionWarga,
-} = require("../config/database")
+const { collectionPayment, collectionWarga } = require("../config/database")
 const entity = require("../entities/payment.entity")
 
 const getAll = async (keyword, sort_by) => {
   try {
-    await client.connect()
+    // await client.connect()
     let data, keywordRegex
     if (keyword) {
       keywordRegex = new RegExp(keyword, "i")
@@ -45,26 +41,26 @@ const getAll = async (keyword, sort_by) => {
     console.error("Error connecting to MongoDB:", err)
     throw err
   } finally {
-    client.close()
+    // client.close()
   }
 }
 
 const getByID = async (id) => {
   try {
-    await client.connect()
+    // await client.connect()
     const data = await collectionPayment.findOne({ _id: new ObjectId(id) })
     return data
   } catch (err) {
     console.error("Error connecting to MongoDB:", err)
     throw err
   } finally {
-    client.close()
+    // client.close()
   }
 }
 
 const getByWargaID = async (id) => {
   try {
-    await client.connect()
+    // await client.connect()
     const data = await collectionPayment
       .find({ "warga._id": new ObjectId(id) })
       .toArray()
@@ -73,13 +69,13 @@ const getByWargaID = async (id) => {
     console.error("Error connecting to MongoDB:", err)
     throw err
   } finally {
-    client.close()
+    // client.close()
   }
 }
 
 const getTotalIncome = async (start, end) => {
   try {
-    await client.connect()
+    // await client.connect()
     const data = await collectionPayment
       .find(
         {
@@ -99,13 +95,13 @@ const getTotalIncome = async (start, end) => {
     console.error("Error connecting to MongoDB:", err)
     throw err
   } finally {
-    client.close()
+    // client.close()
   }
 }
 
 const getLatestPeriodByWargaID = async (id) => {
   try {
-    await client.connect()
+    // await client.connect()
     const data = await collectionPayment.findOne(
       { "warga._id": new ObjectId(id) },
       { sort: { pay_at: -1 }, projection: { period_end: 1, _id: 0 } }
@@ -115,13 +111,13 @@ const getLatestPeriodByWargaID = async (id) => {
     console.error("Error connecting to MongoDB:", err)
     throw err
   } finally {
-    client.close()
+    // client.close()
   }
 }
 
 const create = async (data) => {
   try {
-    await client.connect()
+    // await client.connect()
     const dataWarga = await collectionWarga.findOne({
       _id: new ObjectId(data?.warga_id),
     })
@@ -137,13 +133,13 @@ const create = async (data) => {
     console.error("Error creating payment:", err)
     throw err
   } finally {
-    client.close()
+    // client.close()
   }
 }
 
 const update = async (data) => {
   try {
-    await client.connect()
+    // await client.connect()
     const dataWarga = await collectionWarga.findOne({
       _id: new ObjectId(data?.warga_id),
     })
@@ -159,7 +155,7 @@ const update = async (data) => {
         number_of_period: data?.number_of_period,
         nominal: data?.nominal,
         payment_method: data?.payment_method,
-        pay_at: data?.pay_at,
+        pay_at: new Date(data?.pay_at),
         updated_at: new Date(),
       },
     }
@@ -172,20 +168,20 @@ const update = async (data) => {
     console.error("Error updating payment:", err)
     throw err
   } finally {
-    client.close()
+    // client.close()
   }
 }
 
 const deletePayment = async (id) => {
   try {
-    await client.connect()
+    // await client.connect()
     const result = await collectionPayment.deleteOne({ _id: new ObjectId(id) })
     return result.deletedCount > 0 // Return true if a document was deleted
   } catch (err) {
     console.error("Error deleting payment:", err)
     throw err
   } finally {
-    client.close()
+    // client.close()
   }
 }
 

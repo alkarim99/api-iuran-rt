@@ -6,8 +6,9 @@ const collectionPayment = client.db("Iuran-DB").collection("payments")
 const collectionUser = client.db("User-DB").collection("user")
 const collectionWarga = client.db("Warga-DB").collection("wargas")
 
+client.connect()
+
 module.exports = {
-  client,
   collectionPayment,
   collectionUser,
   collectionWarga,

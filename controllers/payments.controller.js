@@ -2,7 +2,7 @@ const model = require("../repositories/payments.repository")
 const jwt = require("jsonwebtoken")
 const { getToken } = require("../middleware/jwt.middleware")
 
-const validationData = (data) => {
+const validationData = (data, res) => {
   if (!data?.warga_id) {
     return res.status(400).send({
       status: false,
@@ -39,7 +39,7 @@ const validationData = (data) => {
   if (!data?.pay_at) {
     return res.status(400).send({
       status: false,
-      message: "Bad Request. Param period_start not found.",
+      message: "Bad Request. Param pay_at not found.",
     })
   }
 }
@@ -295,12 +295,13 @@ const create = async (req, res) => {
       async (err, { _id, role }) => {
         if (role == "admin") {
           const data = req.body
-          validationData(data)
+          validationData(data, res)
           const period_start = new Date(data?.period_start)
           const period_end = new Date(data?.period_end)
           const number_of_period =
             (period_end.getFullYear() - period_start.getFullYear()) * 12 +
-            (period_end.getMonth() - period_start.getMonth()) + 1
+            (period_end.getMonth() - period_start.getMonth()) +
+            1
           data.number_of_period = number_of_period
           const insertedId = await model.create(data)
           if (insertedId) {
@@ -347,7 +348,7 @@ const update = async (req, res) => {
               message: "Bad Request. Param id not found.",
             })
           }
-          validationData(data)
+          validationData(data, res)
           const period_start = new Date(data?.period_start)
           const period_end = new Date(data?.period_end)
           const number_of_period =

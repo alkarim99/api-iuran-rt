@@ -1,10 +1,10 @@
 const { ObjectId } = require("mongodb")
-const { client, collectionWarga } = require("../config/database")
+const { collectionWarga } = require("../config/database")
 const entity = require("../entities/warga.entity")
 
 const getAll = async (keyword, sort_by, order = 1) => {
   try {
-    await client.connect()
+    // await client.connect()
     let data, keywordRegex
     if (keyword) {
       keywordRegex = new RegExp(keyword, "i")
@@ -37,20 +37,20 @@ const getAll = async (keyword, sort_by, order = 1) => {
     console.error("Error connecting to MongoDB:", err)
     throw err
   } finally {
-    client.close()
+    // client.close()
   }
 }
 
 const getByID = async (id) => {
   try {
-    await client.connect()
+    // await client.connect()
     const data = await collectionWarga.findOne({ _id: new ObjectId(id) })
     return data
   } catch (err) {
     console.error("Error connecting to MongoDB:", err)
     throw err
   } finally {
-    client.close()
+    // client.close()
   }
 }
 
@@ -60,7 +60,7 @@ const isAddressDuplicate = async (id, address) => {
     if (id) {
       query._id = { $ne: new ObjectId(id) } // Exclude the current warga ID when checking for duplicates during update
     }
-    await client.connect()
+    // await client.connect()
     const existingWarga = await collectionWarga.findOne(query)
     return !!existingWarga
   } catch (err) {
@@ -71,7 +71,7 @@ const isAddressDuplicate = async (id, address) => {
 
 const create = async (data) => {
   try {
-    await client.connect()
+    // await client.connect()
     const isDuplicate = await isAddressDuplicate(null, data?.address)
     if (isDuplicate) {
       return false
@@ -83,13 +83,13 @@ const create = async (data) => {
     console.error("Error creating warga:", err)
     throw err
   } finally {
-    client.close()
+    // client.close()
   }
 }
 
 const update = async (data) => {
   try {
-    await client.connect()
+    // await client.connect()
     const isDuplicate = await isAddressDuplicate(data?.id, data?.address)
     if (isDuplicate) {
       return false
@@ -110,20 +110,20 @@ const update = async (data) => {
     console.error("Error updating warga:", err)
     throw err
   } finally {
-    client.close()
+    // client.close()
   }
 }
 
 const deleteWarga = async (id) => {
   try {
-    await client.connect()
+    // await client.connect()
     const result = await collectionWarga.deleteOne({ _id: new ObjectId(id) })
     return result.deletedCount > 0 // Return true if a document was deleted
   } catch (err) {
     console.error("Error deleting warga:", err)
     throw err
   } finally {
-    client.close()
+    // client.close()
   }
 }
 

@@ -8,14 +8,12 @@ const getAll = async (req, res) => {
       getToken(req),
       process.env.JWT_PRIVATE_KEY,
       async (err, { _id, role }) => {
-        const keyword = req?.query?.keyword
-        const sort_by = req?.query?.sort_by
-        const order = req?.query?.order
-        const data = await model.getAll(keyword, sort_by, order)
+        const { keyword, sort_by, order, page, limit } = req?.query
+        const data = await model.getAll(keyword, sort_by, order, page, limit)
         res.send({
           status: true,
           message: "Get data success",
-          data,
+          ...data,
         })
       }
     )

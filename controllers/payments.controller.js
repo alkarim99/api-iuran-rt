@@ -87,13 +87,12 @@ const getAll = async (req, res) => {
       process.env.JWT_PRIVATE_KEY,
       async (err, { _id, role }) => {
         if (role == "admin") {
-          const keyword = req?.query?.keyword
-          const sort_by = req?.query?.sort_by
-          const data = await model.getAll(keyword, sort_by)
+        const { keyword, sort_by, page, limit } = req?.query
+        const data = await model.getAll(keyword, sort_by, page, limit)
           res.send({
             status: true,
             message: "Get data success",
-            data,
+            ...data,
           })
         } else {
           res.status(401).send({

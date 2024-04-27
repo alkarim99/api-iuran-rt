@@ -2,46 +2,44 @@ const { ObjectId } = require("mongodb")
 const { collectionPayment, collectionWarga } = require("../config/database")
 const entity = require("../entities/payment.entity")
 
-const getAll = async (keyword, sort_by) => {
+const getAll = async (keyword, sort_by, page = 1, limit = 20) => {
   try {
-    // await client.connect()
-    let data, keywordRegex
+    let query = {}
+    let options = {
+      skip: (parseInt(page) - 1) * parseInt(limit),
+      limit: parseInt(limit),
+    }
+
     if (keyword) {
-      keywordRegex = new RegExp(keyword, "i")
+      let keywordRegex = new RegExp(keyword, "i")
+      query["$or"] = [
+        { "warga.name": keywordRegex },
+        { "warga.address": keywordRegex },
+      ]
     }
-    if (keyword && sort_by) {
-      data = await collectionPayment
-        .find({
-          $or: [
-            { "warga.name": keywordRegex },
-            { "warga.address": keywordRegex },
-          ],
-        })
-        .sort({ [sort_by]: 1 })
-        .toArray()
-    } else if (keyword) {
-      data = await collectionPayment
-        .find({
-          $or: [
-            { "warga.name": keywordRegex },
-            { "warga.address": keywordRegex },
-          ],
-        })
-        .toArray()
-    } else if (sort_by) {
-      data = await collectionPayment
-        .find({})
-        .sort({ [sort_by]: -1 })
-        .toArray()
-    } else {
-      data = await collectionPayment.find({}).toArray()
+
+    let sort = {}
+    if (sort_by) {
+      sort[sort_by] = sort_by === "asc" ? 1 : -1
+      options.sort = sort
     }
-    return data
+
+    const data = await collectionPayment.find(query, options).toArray()
+    const totalItems = await collectionPayment.countDocuments(query)
+    const totalPages = Math.ceil(totalItems / limit)
+
+    const response = {
+      currentPage: parseInt(page),
+      totalPages: totalPages,
+      totalCount: totalItems,
+      perPage: parseInt(limit),
+      data: data,
+    }
+
+    return response
   } catch (err) {
-    console.error("Error connecting to MongoDB:", err)
+    console.error("Error retrieving data from MongoDB:", err)
     throw err
-  } finally {
-    // client.close()
   }
 }
 

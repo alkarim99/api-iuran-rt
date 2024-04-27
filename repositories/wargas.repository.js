@@ -2,42 +2,105 @@ const { ObjectId } = require("mongodb")
 const { collectionWarga } = require("../config/database")
 const entity = require("../entities/warga.entity")
 
-const getAll = async (keyword, sort_by, order = 1) => {
+// const getAll = async (keyword, sort_by, order = 1, page = 1, limit = 20) => {
+//   try {
+//     // await client.connect()
+//     let data, keywordRegex
+//     if (keyword) {
+//       keywordRegex = new RegExp(keyword, "i")
+//     }
+//     if (keyword && sort_by) {
+//       data = await collectionWarga
+//         .find({
+//           $or: [{ name: keywordRegex }, { address: keywordRegex }],
+//         })
+//         .sort({ [sort_by]: [order] })
+//         .skip((parseInt(page) - 1) * parseInt(limit))
+//         .limit(parseInt(limit))
+//         .toArray()
+//     } else if (keyword) {
+//       data = await collectionWarga
+//         .find({
+//           $or: [{ name: keywordRegex }, { address: keywordRegex }],
+//         })
+//         .skip((parseInt(page) - 1) * parseInt(limit))
+//         .limit(parseInt(limit))
+//         .sort({ address: 1 })
+//         .toArray()
+//     } else if (sort_by) {
+//       data = await collectionWarga
+//         .find({})
+//         .skip((parseInt(page) - 1) * parseInt(limit))
+//         .limit(parseInt(limit))
+//         .sort({ [sort_by]: [order] })
+//         .toArray()
+//     } else {
+//       data = await collectionWarga
+//         .find({})
+//         .skip((parseInt(page) - 1) * parseInt(limit))
+//         .limit(parseInt(limit))
+//         .sort({ address: 1 })
+//         .toArray()
+//     }
+
+//     const totalItems = await collectionWarga.countDocuments(data)
+//     const totalPages = Math.ceil(totalItems / limit)
+
+//     const response = {
+//       currentPage: parseInt(page),
+//       totalPages: totalPages,
+//       totalCount: totalItems,
+//       perPage: parseInt(limit),
+//       data: data,
+//     }
+
+//     return response
+//   } catch (err) {
+//     console.error("Error connecting to MongoDB:", err)
+//     throw err
+//   } finally {
+//     // client.close()
+//   }
+// }
+
+const getAll = async (keyword, sort_by, order = 1, page = 1, limit = 20) => {
   try {
-    // await client.connect()
-    let data, keywordRegex
-    if (keyword) {
-      keywordRegex = new RegExp(keyword, "i")
-    }
-    if (keyword && sort_by) {
-      data = await collectionWarga
-        .find({
-          $or: [{ name: keywordRegex }, { address: keywordRegex }],
-        })
-        .sort({ [sort_by]: [order] })
-        .toArray()
-    } else if (keyword) {
-      data = await collectionWarga
-        .find({
-          $or: [{ name: keywordRegex }, { address: keywordRegex }],
-        })
-        .sort({ address: 1 })
-        .toArray()
-    } else if (sort_by) {
-      data = await collectionWarga
-        .find({})
-        .sort({ [sort_by]: [order] })
-        .toArray()
-    } else {
-      data = await collectionWarga.find({}).sort({ address: 1 }).toArray()
+    let query = {}
+    let options = {
+      skip: (parseInt(page) - 1) * parseInt(limit),
+      limit: parseInt(limit),
     }
 
-    return data
+    if (keyword) {
+      let keywordRegex = new RegExp(keyword, "i")
+      query["$or"] = [{ name: keywordRegex }, { address: keywordRegex }]
+    }
+
+    let sort = {}
+    if (sort_by) {
+      sort[sort_by] = order === -1 ? -1 : 1
+      options.sort = sort
+    } else {
+      sort = { address: 1 }
+      options.sort = sort
+    }
+
+    const data = await collectionWarga.find(query, options).toArray()
+    const totalItems = await collectionWarga.countDocuments(query)
+    const totalPages = Math.ceil(totalItems / limit)
+
+    const response = {
+      currentPage: parseInt(page),
+      totalPages: totalPages,
+      totalCount: totalItems,
+      perPage: parseInt(limit),
+      data: data,
+    }
+
+    return response
   } catch (err) {
-    console.error("Error connecting to MongoDB:", err)
+    console.error("Error retrieving data from MongoDB:", err)
     throw err
-  } finally {
-    // client.close()
   }
 }
 

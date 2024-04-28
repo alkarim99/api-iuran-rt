@@ -66,6 +66,7 @@ const getAllMonthsBetween = (data) => {
       period: monthYear,
       nominal,
       pay_at: data?.pay_at,
+      created_at: data?.created_at,
     }
 
     // Add the unique combination of month and year to the array
@@ -87,8 +88,8 @@ const getAll = async (req, res) => {
       process.env.JWT_PRIVATE_KEY,
       async (err, { _id, role }) => {
         if (role == "admin") {
-        const { keyword, sort_by, page, limit } = req?.query
-        const data = await model.getAll(keyword, sort_by, page, limit)
+          const { keyword, sort_by, page, limit } = req?.query
+          const data = await model.getAll(keyword, sort_by, page, limit)
           res.send({
             status: true,
             message: "Get data success",
@@ -154,8 +155,9 @@ const getByWargaID = async (req, res) => {
         if (role == "admin") {
           const {
             params: { id },
+            query: { sort_by },
           } = req
-          const data = await model.getByWargaID(id)
+          const data = await model.getByWargaID(id, sort_by)
           res.send({
             status: true,
             message: "Get data success",
@@ -255,8 +257,9 @@ const getReports = async (req, res) => {
         if (role == "admin") {
           const {
             params: { id },
+            query: { sort_by },
           } = req
-          const data = await model.getByWargaID(id)
+          const data = await model.getByWargaID(id, sort_by)
           let reports = []
           data.forEach((payment) => {
             const months = getAllMonthsBetween(payment)

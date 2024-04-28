@@ -56,11 +56,18 @@ const getByID = async (id) => {
   }
 }
 
-const getByWargaID = async (id) => {
+const getByWargaID = async (id, sort_by) => {
   try {
     // await client.connect()
+    let options = {}
+
+    let sort = {}
+    if (sort_by) {
+      sort[sort_by] = sort_by === "asc" ? 1 : -1
+      options.sort = sort
+    }
     const data = await collectionPayment
-      .find({ "warga._id": new ObjectId(id) })
+      .find({ "warga._id": new ObjectId(id) }, options)
       .toArray()
     return data
   } catch (err) {

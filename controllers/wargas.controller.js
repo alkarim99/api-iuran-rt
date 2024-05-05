@@ -2,6 +2,30 @@ const model = require("../repositories/wargas.repository")
 const jwt = require("jsonwebtoken")
 const { getToken } = require("../middleware/jwt.middleware")
 
+const getAllOption = async (req, res) => {
+  try {
+    jwt.verify(
+      getToken(req),
+      process.env.JWT_PRIVATE_KEY,
+      async (err, { _id, role }) => {
+        const { keyword, sort_by, order } = req?.query
+        const data = await model.getAllOption(keyword, sort_by, order)
+        res.send({
+          status: true,
+          message: "Get data success",
+          data,
+        })
+      }
+    )
+  } catch (err) {
+    res.status(500).send({
+      status: false,
+      message: "Error fetching data",
+      error: err.message,
+    })
+  }
+}
+
 const getAll = async (req, res) => {
   try {
     jwt.verify(
@@ -185,4 +209,4 @@ const deleteWarga = async (req, res) => {
   }
 }
 
-module.exports = { getAll, getByID, create, update, deleteWarga }
+module.exports = { getAllOption, getAll, getByID, create, update, deleteWarga }

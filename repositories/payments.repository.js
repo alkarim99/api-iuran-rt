@@ -78,24 +78,40 @@ const getByWargaID = async (id, sort_by) => {
   }
 }
 
-const getTotalIncome = async (start, end) => {
+const getTotalIncome = async (start, end, sort_by, page = 1, limit = 20) => {
   try {
-    // await client.connect()
-    const data = await collectionPayment
-      .find(
-        {
-          pay_at: { $gte: new Date(start), $lte: new Date(end) },
-        },
-        {
-          projection: { nominal: 1, _id: 0 }, // Include only the nominal field
-        }
-      )
-      .toArray()
+    let query = {
+      pay_at: { $gte: new Date(start), $lte: new Date(end) },
+    }
+    let options = {
+      skip: (parseInt(page) - 1) * parseInt(limit),
+      limit: parseInt(limit),
+    }
+
+    let sort = {}
+    if (sort_by) {
+      sort[sort_by] = sort_by === "asc" ? 1 : -1
+      options.sort = sort
+    }
+
+    const data = await collectionPayment.find(query, options).toArray()
+    const totalItems = await collectionPayment.countDocuments(query)
+    const totalPages = Math.ceil(totalItems / limit)
     let totalIncome = 0
     data.forEach((payment) => {
       totalIncome += parseInt(payment.nominal)
     })
-    return totalIncome
+
+    const response = {
+      currentPage: parseInt(page),
+      totalPages: totalPages,
+      totalCount: totalItems,
+      perPage: parseInt(limit),
+      totalIncome,
+      data: data,
+    }
+
+    return response
   } catch (err) {
     console.error("Error connecting to MongoDB:", err)
     throw err

@@ -310,6 +310,18 @@ const create = async (req, res) => {
             (period_end.getMonth() - period_start.getMonth()) +
             1
           data.number_of_period = number_of_period
+          let detailsData = {}
+
+          if (data?.nominal % 75000 === 0) {
+            detailsData.rt = 75000 * number_of_period
+          } else {
+            detailsData.rt = 94500 * number_of_period
+            detailsData.pkk = 8000 * number_of_period
+            detailsData.sosial = 2500 * number_of_period
+            detailsData.kematian = 5000 * number_of_period
+          }
+          data.details = detailsData
+
           const insertedId = await model.create(data)
           if (insertedId) {
             res.send({
@@ -363,6 +375,21 @@ const update = async (req, res) => {
             (period_end.getMonth() - period_start.getMonth()) +
             1
           data.number_of_period = number_of_period
+          let detailsData = {}
+
+          if (data?.nominal % 75000 === 0) {
+            detailsData.rt = 75000 * number_of_period
+            detailsData.pkk = 0 * number_of_period
+            detailsData.sosial = 0 * number_of_period
+            detailsData.kematian = 0 * number_of_period
+          } else {
+            detailsData.rt = 94500 * number_of_period
+            detailsData.pkk = 8000 * number_of_period
+            detailsData.sosial = 2500 * number_of_period
+            detailsData.kematian = 5000 * number_of_period
+          }
+          data.details = detailsData
+
           const isUpdated = await model.update(data)
           if (isUpdated) {
             res.send({

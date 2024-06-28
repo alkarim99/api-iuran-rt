@@ -151,6 +151,7 @@ const create = async (data) => {
       address: dataWarga?.address,
     }
     // const payment = entity.paymentEntity(data)
+    data.details_payment = new detailsPaymentEntity(data?.details)
     const payment = new paymentEntity(data)
     const result = await collPayment.insertOne(payment)
     return result.insertedId
@@ -181,6 +182,7 @@ const update = async (data) => {
         nominal: data?.nominal,
         payment_method: data?.payment_method,
         pay_at: new Date(data?.pay_at),
+        details_payment: new detailsPaymentEntity(data?.details),
         updated_at: new Date(),
       },
     }

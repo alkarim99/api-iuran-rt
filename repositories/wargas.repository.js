@@ -1,5 +1,5 @@
 const { ObjectId } = require("mongodb")
-const { collectionWarga } = require("../config/database")
+const { collWarga } = require("../config/database")
 const entity = require("../entities/warga.entity")
 
 const getAllOption = async (keyword, sort_by, order = 1) => {
@@ -21,7 +21,7 @@ const getAllOption = async (keyword, sort_by, order = 1) => {
       options.sort = sort
     }
 
-    const data = await collectionWarga.find(query).toArray()
+    const data = await collWarga.find(query).toArray()
 
     return data
   } catch (err) {
@@ -52,8 +52,8 @@ const getAll = async (keyword, sort_by, order = 1, page = 1, limit = 20) => {
       options.sort = sort
     }
 
-    const data = await collectionWarga.find(query, options).toArray()
-    const totalItems = await collectionWarga.countDocuments(query)
+    const data = await collWarga.find(query, options).toArray()
+    const totalItems = await collWarga.countDocuments(query)
     const totalPages = Math.ceil(totalItems / limit)
 
     const response = {
@@ -74,7 +74,7 @@ const getAll = async (keyword, sort_by, order = 1, page = 1, limit = 20) => {
 const getByID = async (id) => {
   try {
     // await client.connect()
-    const data = await collectionWarga.findOne({ _id: new ObjectId(id) })
+    const data = await collWarga.findOne({ _id: new ObjectId(id) })
     return data
   } catch (err) {
     console.error("Error connecting to MongoDB:", err)
@@ -91,7 +91,7 @@ const isAddressDuplicate = async (id, address) => {
       query._id = { $ne: new ObjectId(id) } // Exclude the current warga ID when checking for duplicates during update
     }
     // await client.connect()
-    const existingWarga = await collectionWarga.findOne(query)
+    const existingWarga = await collWarga.findOne(query)
     return !!existingWarga
   } catch (err) {
     console.error("Error checking duplicate address:", err)
@@ -107,7 +107,7 @@ const create = async (data) => {
       return false
     }
     const warga = entity.wargaEntity(data)
-    const result = await collectionWarga.insertOne(warga)
+    const result = await collWarga.insertOne(warga)
     return result.insertedId
   } catch (err) {
     console.error("Error creating warga:", err)
@@ -131,7 +131,7 @@ const update = async (data) => {
         updated_at: new Date(),
       },
     }
-    const result = await collectionWarga.updateOne(
+    const result = await collWarga.updateOne(
       { _id: new ObjectId(data?.id) },
       updateData
     )
@@ -147,7 +147,7 @@ const update = async (data) => {
 const deleteWarga = async (id) => {
   try {
     // await client.connect()
-    const result = await collectionWarga.deleteOne({ _id: new ObjectId(id) })
+    const result = await collWarga.deleteOne({ _id: new ObjectId(id) })
     return result.deletedCount > 0 // Return true if a document was deleted
   } catch (err) {
     console.error("Error deleting warga:", err)

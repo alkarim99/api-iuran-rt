@@ -1,6 +1,9 @@
 const { ObjectId } = require("mongodb")
-const { collectionPayment, collectionWarga } = require("../config/database")
-const entity = require("../entities/payment.entity")
+const { collPayment, collWarga } = require("../config/database")
+const {
+  paymentEntity,
+  detailsPaymentEntity,
+} = require("../entities/payment.entity")
 
 const getAll = async (keyword, sort_by, page = 1, limit = 20) => {
   try {
@@ -24,8 +27,8 @@ const getAll = async (keyword, sort_by, page = 1, limit = 20) => {
       options.sort = sort
     }
 
-    const data = await collectionPayment.find(query, options).toArray()
-    const totalItems = await collectionPayment.countDocuments(query)
+    const data = await collPayment.find(query, options).toArray()
+    const totalItems = await collPayment.countDocuments(query)
     const totalPages = Math.ceil(totalItems / limit)
 
     const response = {
@@ -46,7 +49,7 @@ const getAll = async (keyword, sort_by, page = 1, limit = 20) => {
 const getByID = async (id) => {
   try {
     // await client.connect()
-    const data = await collectionPayment.findOne({ _id: new ObjectId(id) })
+    const data = await collPayment.findOne({ _id: new ObjectId(id) })
     return data
   } catch (err) {
     console.error("Error connecting to MongoDB:", err)
@@ -66,7 +69,7 @@ const getByWargaID = async (id, sort_by) => {
       sort[sort_by] = sort_by === "asc" ? 1 : -1
       options.sort = sort
     }
-    const data = await collectionPayment
+    const data = await collPayment
       .find({ "warga._id": new ObjectId(id) }, options)
       .toArray()
     return data
@@ -94,8 +97,8 @@ const getTotalIncome = async (start, end, sort_by, page = 1, limit = 20) => {
       options.sort = sort
     }
 
-    const data = await collectionPayment.find(query, options).toArray()
-    const totalItems = await collectionPayment.countDocuments(query)
+    const data = await collPayment.find(query, options).toArray()
+    const totalItems = await collPayment.countDocuments(query)
     const totalPages = Math.ceil(totalItems / limit)
     let totalIncome = 0
     data.forEach((payment) => {
@@ -123,7 +126,7 @@ const getTotalIncome = async (start, end, sort_by, page = 1, limit = 20) => {
 const getLatestPeriodByWargaID = async (id) => {
   try {
     // await client.connect()
-    const data = await collectionPayment.findOne(
+    const data = await collPayment.findOne(
       { "warga._id": new ObjectId(id) },
       { sort: { pay_at: -1 }, projection: { period_end: 1, _id: 0 } }
     )
@@ -139,7 +142,7 @@ const getLatestPeriodByWargaID = async (id) => {
 const create = async (data) => {
   try {
     // await client.connect()
-    const dataWarga = await collectionWarga.findOne({
+    const dataWarga = await collWarga.findOne({
       _id: new ObjectId(data?.warga_id),
     })
     data.warga = {
@@ -147,8 +150,9 @@ const create = async (data) => {
       name: dataWarga?.name,
       address: dataWarga?.address,
     }
-    const payment = entity.paymentEntity(data)
-    const result = await collectionPayment.insertOne(payment)
+    // const payment = entity.paymentEntity(data)
+    const payment = new paymentEntity(data)
+    const result = await collPayment.insertOne(payment)
     return result.insertedId
   } catch (err) {
     console.error("Error creating payment:", err)
@@ -161,7 +165,7 @@ const create = async (data) => {
 const update = async (data) => {
   try {
     // await client.connect()
-    const dataWarga = await collectionWarga.findOne({
+    const dataWarga = await collWarga.findOne({
       _id: new ObjectId(data?.warga_id),
     })
     const updateData = {
@@ -180,7 +184,7 @@ const update = async (data) => {
         updated_at: new Date(),
       },
     }
-    const result = await collectionPayment.updateOne(
+    const result = await collPayment.updateOne(
       { _id: new ObjectId(data?.id) },
       updateData
     )
@@ -196,7 +200,7 @@ const update = async (data) => {
 const deletePayment = async (id) => {
   try {
     // await client.connect()
-    const result = await collectionPayment.deleteOne({ _id: new ObjectId(id) })
+    const result = await collPayment.deleteOne({ _id: new ObjectId(id) })
     return result.deletedCount > 0 // Return true if a document was deleted
   } catch (err) {
     console.error("Error deleting payment:", err)

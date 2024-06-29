@@ -32,7 +32,7 @@ app.use(authRoutes)
 
 // Home
 app.get("/", (req, res) => {
-  res.send("API For Iuran RT")
+  res.send(`API For Iuran RT ${process.env.NODE_ENV}`)
 })
 
 // Other routes
@@ -40,4 +40,5 @@ app.use(invalidRoutes)
 
 app.listen(8000, () => {
   console.log("App running in port 8000")
+  console.log(process.env.NODE_ENV)
 })

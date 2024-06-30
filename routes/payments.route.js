@@ -10,6 +10,7 @@ router.get(
 )
 router.get("/payments/report/:id", checkToken, paymentsController.getReports)
 router.get("/payments/total", checkToken, paymentsController.getTotalIncome)
+router.get("/payments/rincian", checkToken, paymentsController.getByPayAt)
 router.get("/payments/:id", checkToken, paymentsController.getByID)
 router.get("/payments", checkToken, paymentsController.getAll)
 router.post("/payments", checkToken, paymentsController.create)

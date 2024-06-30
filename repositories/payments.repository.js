@@ -42,6 +42,55 @@ const getAll = async (keyword, sort_by, page = 1, limit = 20) => {
   }
 }
 
+const getByPayAt = async (
+  firstDay,
+  lastDay,
+  keyword,
+  sort_by,
+  page = 1,
+  limit = 20
+) => {
+  try {
+    let query = {}
+    let options = {
+      skip: (parseInt(page) - 1) * parseInt(limit),
+      limit: parseInt(limit),
+    }
+
+    if (keyword) {
+      let keywordRegex = new RegExp(keyword, "i")
+      query["$or"] = [
+        { "warga.name": keywordRegex },
+        { "warga.address": keywordRegex },
+      ]
+    }
+    query["$and"] = [{ pay_at: { $gte: firstDay, $lte: lastDay } }]
+
+    let sort = {}
+    if (sort_by) {
+      sort[sort_by] = sort_by === "asc" ? 1 : -1
+      options.sort = sort
+    }
+
+    const data = await collPayment.find(query, options).toArray()
+    const totalItems = await collPayment.countDocuments(query)
+    const totalPages = Math.ceil(totalItems / limit)
+
+    const response = {
+      currentPage: parseInt(page),
+      totalPages: totalPages,
+      totalCount: totalItems,
+      perPage: parseInt(limit),
+      data: data,
+    }
+
+    return response
+  } catch (err) {
+    console.error("Error retrieving data from MongoDB:", err)
+    throw err
+  }
+}
+
 const getByID = async (id) => {
   try {
     const data = await collPayment.findOne({ _id: new ObjectId(id) })
@@ -180,6 +229,7 @@ const deletePayment = async (id) => {
 
 module.exports = {
   getAll,
+  getByPayAt,
   getByID,
   getByWargaID,
   getTotalIncome,

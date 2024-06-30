@@ -148,6 +148,48 @@ const getAll = async (req, res) => {
   }
 }
 
+const getByPayAt = async (req, res) => {
+  try {
+    jwt.verify(
+      getToken(req),
+      process.env.JWT_PRIVATE_KEY,
+      async (err, { _id, role }) => {
+        if (role == "admin") {
+          const { pay_at, keyword, sort_by, page, limit } = req?.query
+          const payAt = new Date(pay_at)
+          const firstDay = new Date(payAt.getFullYear(), payAt.getMonth(), 1)
+          const lastDay = new Date(payAt.getFullYear(), payAt.getMonth() + 1, 0)
+          console.log(payAt, firstDay, lastDay)
+          const data = await model.getByPayAt(
+            firstDay,
+            lastDay,
+            keyword,
+            sort_by,
+            page,
+            limit
+          )
+          res.send({
+            status: true,
+            message: "Get data success",
+            ...data,
+          })
+        } else {
+          res.status(401).send({
+            status: false,
+            message: "Unauthorized",
+          })
+        }
+      }
+    )
+  } catch (err) {
+    res.status(500).send({
+      status: false,
+      message: "Error fetching data",
+      error: err.message,
+    })
+  }
+}
+
 const getByID = async (req, res) => {
   try {
     jwt.verify(
@@ -476,6 +518,7 @@ const deletePayment = async (req, res) => {
 
 module.exports = {
   getAll,
+  getByPayAt,
   getByID,
   getByWargaID,
   getTotalIncome,

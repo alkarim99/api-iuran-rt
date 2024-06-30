@@ -1,6 +1,7 @@
 const model = require("../repositories/wargas.repository")
 const jwt = require("jsonwebtoken")
 const { getToken } = require("../middleware/jwt.middleware")
+const { wargaEntity } = require("../entities/warga.entity")
 
 const getAllOption = async (req, res) => {
   try {
@@ -99,7 +100,19 @@ const create = async (req, res) => {
               error: "Bad Request. Param address not found.",
             })
           }
-          const insertedId = await model.create(data)
+          const isDuplicate = await model.isAddressDuplicate(
+            null,
+            data?.address
+          )
+          if (isDuplicate) {
+            res.status(400).send({
+              status: false,
+              message: "Error creating data",
+              error: "Bad Request. Duplicate address.",
+            })
+          }
+          const warga = new wargaEntity(data)
+          const insertedId = await model.create(warga)
           if (insertedId) {
             res.send({
               status: true,
@@ -138,6 +151,19 @@ const update = async (req, res) => {
       async (err, { _id, role }) => {
         if (role == "admin") {
           const data = req.body
+
+          const isDuplicate = await model.isAddressDuplicate(
+            data?.id,
+            data?.address
+          )
+          if (isDuplicate) {
+            res.status(400).send({
+              status: false,
+              message: "Error creating data",
+              error: "Bad Request. Duplicate address.",
+            })
+          }
+
           const isUpdated = await model.update(data)
           if (isUpdated) {
             res.send({

@@ -1,15 +1,22 @@
 const { ObjectId } = require("mongodb")
 
-const wargaEntity = (data) => {
-  const warga = {
-    _id: new ObjectId(),
-    name: data?.name,
-    address: data?.address,
-    created_at: new Date(),
-    updated_at: new Date(),
-    _class: "Warga",
+class wargaEntity {
+  constructor(data) {
+    this._id = new ObjectId()
+    this.name = data?.name
+    this.address = data?.address
+    this.created_at = new Date()
+    this.updated_at = new Date()
+    this._class = "Warga"
   }
-  return warga
 }
 
-module.exports = { wargaEntity }
+class wargaDataEmbed {
+  constructor(data) {
+    this._id = new ObjectId()
+    this.name = data?.name
+    this.address = data?.address
+  }
+}
+
+module.exports = { wargaEntity, wargaDataEmbed }

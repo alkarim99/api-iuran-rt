@@ -1,6 +1,13 @@
+const { ObjectId } = require("mongodb")
 const model = require("../repositories/payments.repository")
 const jwt = require("jsonwebtoken")
 const { getToken } = require("../middleware/jwt.middleware")
+const { collWarga } = require("../config/database")
+const {
+  paymentEntity,
+  detailsPaymentEntity,
+} = require("../entities/payment.entity")
+const { wargaDataEmbed } = require("../entities/warga.entity")
 
 const validationData = (data, res) => {
   if (!data?.warga_id) {
@@ -79,6 +86,35 @@ const getAllMonthsBetween = (data) => {
   }
 
   return result
+}
+
+const getNumberOfPeriods = (data) => {
+  const period_start = new Date(data?.period_start)
+  const period_end = new Date(data?.period_end)
+  const number_of_period =
+    (period_end.getFullYear() - period_start.getFullYear()) * 12 +
+    (period_end.getMonth() - period_start.getMonth()) +
+    1
+  data.number_of_period = number_of_period
+  return data
+}
+
+const getDetailsPayment = (data) => {
+  let dataDetails = {}
+
+  if (data?.nominal % 75000 === 0) {
+    dataDetails.rt = 75000 * data?.number_of_period
+    dataDetails.pkk = 0
+    dataDetails.sosial = 0
+    dataDetails.kematian = 0
+  } else {
+    dataDetails.rt = 94500 * data?.number_of_period
+    dataDetails.pkk = 8000 * data?.number_of_period
+    dataDetails.sosial = 2500 * data?.number_of_period
+    dataDetails.kematian = 5000 * data?.number_of_period
+  }
+  data.details_payment = new detailsPaymentEntity(dataDetails)
+  return data
 }
 
 const getAll = async (req, res) => {
@@ -301,28 +337,19 @@ const create = async (req, res) => {
       process.env.JWT_PRIVATE_KEY,
       async (err, { _id, role }) => {
         if (role == "admin") {
-          const data = req.body
+          let data = req.body
           validationData(data, res)
-          const period_start = new Date(data?.period_start)
-          const period_end = new Date(data?.period_end)
-          const number_of_period =
-            (period_end.getFullYear() - period_start.getFullYear()) * 12 +
-            (period_end.getMonth() - period_start.getMonth()) +
-            1
-          data.number_of_period = number_of_period
-          let detailsData = {}
 
-          if (data?.nominal % 75000 === 0) {
-            detailsData.rt = 75000 * number_of_period
-          } else {
-            detailsData.rt = 94500 * number_of_period
-            detailsData.pkk = 8000 * number_of_period
-            detailsData.sosial = 2500 * number_of_period
-            detailsData.kematian = 5000 * number_of_period
-          }
-          data.details = detailsData
+          const dataWarga = await collWarga.findOne({
+            _id: new ObjectId(data?.warga_id),
+          })
+          data.warga = new wargaDataEmbed(dataWarga)
 
-          const insertedId = await model.create(data)
+          data = getNumberOfPeriods(data)
+          data = getDetailsPayment(data)
+
+          const payment = new paymentEntity(data)
+          const insertedId = await model.create(payment)
           if (insertedId) {
             res.send({
               status: true,
@@ -360,7 +387,7 @@ const update = async (req, res) => {
       process.env.JWT_PRIVATE_KEY,
       async (err, { _id, role }) => {
         if (role == "admin") {
-          const data = req.body
+          let data = req.body
           if (!data?.id) {
             return res.status(400).send({
               status: false,
@@ -368,27 +395,14 @@ const update = async (req, res) => {
             })
           }
           validationData(data, res)
-          const period_start = new Date(data?.period_start)
-          const period_end = new Date(data?.period_end)
-          const number_of_period =
-            (period_end.getFullYear() - period_start.getFullYear()) * 12 +
-            (period_end.getMonth() - period_start.getMonth()) +
-            1
-          data.number_of_period = number_of_period
-          let detailsData = {}
 
-          if (data?.nominal % 75000 === 0) {
-            detailsData.rt = 75000 * number_of_period
-            detailsData.pkk = 0 * number_of_period
-            detailsData.sosial = 0 * number_of_period
-            detailsData.kematian = 0 * number_of_period
-          } else {
-            detailsData.rt = 94500 * number_of_period
-            detailsData.pkk = 8000 * number_of_period
-            detailsData.sosial = 2500 * number_of_period
-            detailsData.kematian = 5000 * number_of_period
-          }
-          data.details = detailsData
+          const dataWarga = await collWarga.findOne({
+            _id: new ObjectId(data?.warga_id),
+          })
+          data.warga = new wargaDataEmbed(dataWarga)
+
+          data = getNumberOfPeriods(data)
+          data = getDetailsPayment(data)
 
           const isUpdated = await model.update(data)
           if (isUpdated) {

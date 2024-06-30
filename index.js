@@ -39,6 +39,5 @@ app.get("/", (req, res) => {
 app.use(invalidRoutes)
 
 app.listen(8000, () => {
-  console.log("App running in port 8000")
-  console.log(process.env.NODE_ENV)
+  console.log(`App running in port 8000 ${process.env.NODE_ENV}`)
 })

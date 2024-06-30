@@ -1,9 +1,5 @@
 const { ObjectId } = require("mongodb")
 const { collPayment, collWarga } = require("../config/database")
-const {
-  paymentEntity,
-  detailsPaymentEntity,
-} = require("../entities/payment.entity")
 
 const getAll = async (keyword, sort_by, page = 1, limit = 20) => {
   try {
@@ -48,14 +44,11 @@ const getAll = async (keyword, sort_by, page = 1, limit = 20) => {
 
 const getByID = async (id) => {
   try {
-    // await client.connect()
     const data = await collPayment.findOne({ _id: new ObjectId(id) })
     return data
   } catch (err) {
     console.error("Error connecting to MongoDB:", err)
     throw err
-  } finally {
-    // client.close()
   }
 }
 
@@ -76,8 +69,6 @@ const getByWargaID = async (id, sort_by) => {
   } catch (err) {
     console.error("Error connecting to MongoDB:", err)
     throw err
-  } finally {
-    // client.close()
   }
 }
 
@@ -118,14 +109,11 @@ const getTotalIncome = async (start, end, sort_by, page = 1, limit = 20) => {
   } catch (err) {
     console.error("Error connecting to MongoDB:", err)
     throw err
-  } finally {
-    // client.close()
   }
 }
 
 const getLatestPeriodByWargaID = async (id) => {
   try {
-    // await client.connect()
     const data = await collPayment.findOne(
       { "warga._id": new ObjectId(id) },
       { sort: { pay_at: -1 }, projection: { period_end: 1, _id: 0 } }
@@ -134,38 +122,21 @@ const getLatestPeriodByWargaID = async (id) => {
   } catch (err) {
     console.error("Error connecting to MongoDB:", err)
     throw err
-  } finally {
-    // client.close()
   }
 }
 
 const create = async (data) => {
   try {
-    // await client.connect()
-    const dataWarga = await collWarga.findOne({
-      _id: new ObjectId(data?.warga_id),
-    })
-    data.warga = {
-      _id: dataWarga?._id,
-      name: dataWarga?.name,
-      address: dataWarga?.address,
-    }
-    // const payment = entity.paymentEntity(data)
-    data.details_payment = new detailsPaymentEntity(data?.details)
-    const payment = new paymentEntity(data)
-    const result = await collPayment.insertOne(payment)
+    const result = await collPayment.insertOne(data)
     return result.insertedId
   } catch (err) {
     console.error("Error creating payment:", err)
     throw err
-  } finally {
-    // client.close()
   }
 }
 
 const update = async (data) => {
   try {
-    // await client.connect()
     const dataWarga = await collWarga.findOne({
       _id: new ObjectId(data?.warga_id),
     })
@@ -182,7 +153,7 @@ const update = async (data) => {
         nominal: data?.nominal,
         payment_method: data?.payment_method,
         pay_at: new Date(data?.pay_at),
-        details_payment: new detailsPaymentEntity(data?.details),
+        details_payment: data?.details_payment,
         updated_at: new Date(),
       },
     }
@@ -194,21 +165,16 @@ const update = async (data) => {
   } catch (err) {
     console.error("Error updating payment:", err)
     throw err
-  } finally {
-    // client.close()
   }
 }
 
 const deletePayment = async (id) => {
   try {
-    // await client.connect()
     const result = await collPayment.deleteOne({ _id: new ObjectId(id) })
     return result.deletedCount > 0 // Return true if a document was deleted
   } catch (err) {
     console.error("Error deleting payment:", err)
     throw err
-  } finally {
-    // client.close()
   }
 }
 

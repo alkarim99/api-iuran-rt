@@ -10,7 +10,7 @@ let collectionUser = process.env.DB_LIVE_COLLECTION_USER
 let dbWarga = process.env.DB_LIVE_NAME_WARGA
 let collectionWarga = process.env.DB_LIVE_COLLECTION_WARGA
 
-if (process.env.NODE_ENV == "development") {
+if (process.env.NODE_ENV == "development" || process.env.NODE_ENV == "local") {
   dbPayment = process.env.DB_DEV_NAME_PAYMENT
   collectionPayment = process.env.DB_DEV_COLLECTION_PAYMENT
   collectionPaymentsType = process.env.DB_DEV_COLLECTION_PAYMENT_TYPE

@@ -3,6 +3,7 @@ const saltRounds = 10
 const model = require("../repositories/users.repository")
 const jwt = require("jsonwebtoken")
 const { getToken } = require("../middleware/jwt.middleware")
+const { userEntity } = require("../entities/user.entity")
 
 const validationData = (data) => {
   if (!data?.name) {
@@ -129,7 +130,8 @@ const create = async (req, res) => {
       bcrypt.hash(data?.password, salt, async function (err, hash) {
         // Store hash in your password DB.
         data.password = hash
-        const insertedId = await model.create(data)
+        const user = new userEntity(data)
+        const insertedId = await model.create(user)
         if (insertedId) {
           res.send({
             status: true,

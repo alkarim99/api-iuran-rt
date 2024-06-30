@@ -1,17 +1,5 @@
 const { ObjectId } = require("mongodb")
 
-// const paymentTypeEntity = (data) => {
-//   const paymentType = {
-//     _id: new ObjectId(),
-//     name: data?.name,
-//     details: new Array(),
-//     created_at: new Date(),
-//     updated_at: new Date(),
-//     _class: "PaymentType",
-//   }
-//   return paymentType
-// }
-
 class paymentTypeEntity {
   constructor(data) {
     this._id = new ObjectId()

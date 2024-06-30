@@ -1,6 +1,5 @@
 const { ObjectId } = require("mongodb")
 const { collWarga } = require("../config/database")
-const entity = require("../entities/warga.entity")
 
 const getAllOption = async (keyword, sort_by, order = 1) => {
   try {
@@ -73,14 +72,11 @@ const getAll = async (keyword, sort_by, order = 1, page = 1, limit = 20) => {
 
 const getByID = async (id) => {
   try {
-    // await client.connect()
     const data = await collWarga.findOne({ _id: new ObjectId(id) })
     return data
   } catch (err) {
     console.error("Error connecting to MongoDB:", err)
     throw err
-  } finally {
-    // client.close()
   }
 }
 
@@ -90,7 +86,6 @@ const isAddressDuplicate = async (id, address) => {
     if (id) {
       query._id = { $ne: new ObjectId(id) } // Exclude the current warga ID when checking for duplicates during update
     }
-    // await client.connect()
     const existingWarga = await collWarga.findOne(query)
     return !!existingWarga
   } catch (err) {
@@ -101,29 +96,16 @@ const isAddressDuplicate = async (id, address) => {
 
 const create = async (data) => {
   try {
-    // await client.connect()
-    const isDuplicate = await isAddressDuplicate(null, data?.address)
-    if (isDuplicate) {
-      return false
-    }
-    const warga = entity.wargaEntity(data)
-    const result = await collWarga.insertOne(warga)
+    const result = await collWarga.insertOne(data)
     return result.insertedId
   } catch (err) {
     console.error("Error creating warga:", err)
     throw err
-  } finally {
-    // client.close()
   }
 }
 
 const update = async (data) => {
   try {
-    // await client.connect()
-    const isDuplicate = await isAddressDuplicate(data?.id, data?.address)
-    if (isDuplicate) {
-      return false
-    }
     const updateData = {
       $set: {
         name: data?.name,
@@ -139,21 +121,16 @@ const update = async (data) => {
   } catch (err) {
     console.error("Error updating warga:", err)
     throw err
-  } finally {
-    // client.close()
   }
 }
 
 const deleteWarga = async (id) => {
   try {
-    // await client.connect()
     const result = await collWarga.deleteOne({ _id: new ObjectId(id) })
     return result.deletedCount > 0 // Return true if a document was deleted
   } catch (err) {
     console.error("Error deleting warga:", err)
     throw err
-  } finally {
-    // client.close()
   }
 }
 

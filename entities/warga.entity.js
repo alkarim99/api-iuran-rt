@@ -13,7 +13,7 @@ class wargaEntity {
 
 class wargaDataEmbed {
   constructor(data) {
-    this._id = new ObjectId()
+    this._id = data?._id
     this.name = data?.name
     this.address = data?.address
   }

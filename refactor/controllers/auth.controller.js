@@ -1,8 +1,10 @@
 const bcrypt = require("bcrypt")
 const saltRounds = 10
+const jwt = require("jsonwebtoken")
 const { signUpSchema, signInSchema } = require("../../dto/auth/request")
-const { signUpResponse } = require("../../dto/auth/response")
-const userRepository = require("../repositories/users.repository")
+const { signUpResponse, signInResponse } = require("../../dto/auth/response")
+const { userEntity } = require("../../entities/user.entity")
+const userRepository = require("../../repositories/users.repository")
 
 const signUp = async (req, res) => {
   try {
@@ -24,7 +26,7 @@ const signUp = async (req, res) => {
     value.password = await bcrypt.hash(value.password, salt)
 
     const user = new userEntity(value)
-    const insertedId = await model.create(user)
+    const insertedId = await userRepository.create(user)
 
     if (insertedId) {
       const responseData = new signUpResponse(user)
@@ -60,7 +62,7 @@ const signIn = async (req, res) => {
 
     const { email, password } = value
 
-    const checkUser = await model.getByEmail(email)
+    const checkUser = await userRepository.getByEmail(email)
     if (!checkUser) {
       return res.status(400).json({
         status: false,
@@ -81,10 +83,11 @@ const signIn = async (req, res) => {
       process.env.JWT_PRIVATE_KEY
     )
 
+    const dataResponse = new signInResponse(checkUser)
     return res.send({
       status: true,
       message: "Sign In Success!",
-      data: checkUser,
+      data: dataResponse,
       token,
     })
   } catch (err) {

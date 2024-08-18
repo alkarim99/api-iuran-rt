@@ -9,6 +9,9 @@ const usersRoutes = require("./routes/users.route")
 const authRoutes = require("./routes/auth.routes")
 const invalidRoutes = require("./routes/404.route")
 
+// refactor
+const authRoutesRefactor = require("./refactor/routes/auth.routes")
+
 const helmet = require("helmet")
 const xss = require("xss-clean")
 const cors = require("cors")
@@ -28,7 +31,10 @@ app.use(cors())
 app.use(wargasRoutes)
 app.use(paymentsRoutes)
 app.use(usersRoutes)
-app.use(authRoutes)
+// app.use(authRoutes)
+
+// refactor
+app.use(authRoutesRefactor)
 
 // Home
 app.get("/", (req, res) => {

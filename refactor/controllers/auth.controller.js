@@ -4,7 +4,7 @@ const jwt = require("jsonwebtoken")
 const { signUpSchema, signInSchema } = require("../../dto/auth/request")
 const { signUpResponse, signInResponse } = require("../../dto/auth/response")
 const { userEntity } = require("../../entities/user.entity")
-const userRepository = require("../../repositories/users.repository")
+const usersRepository = require("../../repositories/users.repository")
 
 const signUp = async (req, res) => {
   try {
@@ -15,7 +15,7 @@ const signUp = async (req, res) => {
         message: error.details[0].message,
       })
     }
-    if (await userRepository.isEmailUnique(value.email)) {
+    if (await usersRepository.isEmailUnique(value.email)) {
       res.status(400).send({
         status: false,
         message: "Email already exists.",
@@ -26,7 +26,7 @@ const signUp = async (req, res) => {
     value.password = await bcrypt.hash(value.password, salt)
 
     const user = new userEntity(value)
-    const insertedId = await userRepository.create(user)
+    const insertedId = await usersRepository.create(user)
 
     if (insertedId) {
       const responseData = new signUpResponse(user)
@@ -62,7 +62,7 @@ const signIn = async (req, res) => {
 
     const { email, password } = value
 
-    const checkUser = await userRepository.getByEmail(email)
+    const checkUser = await usersRepository.getByEmail(email)
     if (!checkUser) {
       return res.status(400).json({
         status: false,

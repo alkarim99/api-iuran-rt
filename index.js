@@ -12,6 +12,7 @@ const invalidRoutes = require("./routes/404.route")
 // refactor
 const authRoutesRefactor = require("./refactor/routes/auth.route")
 const usersRoutesRefactor = require("./refactor/routes/users.route")
+const wargaRoutesRefactor = require("./refactor/routes/wargas.route")
 
 const helmet = require("helmet")
 const xss = require("xss-clean")
@@ -29,7 +30,7 @@ app.use(xss())
 app.use(cors())
 
 // Routes
-app.use(wargasRoutes)
+// app.use(wargasRoutes)
 app.use(paymentsRoutes)
 // app.use(usersRoutes)
 // app.use(authRoutes)
@@ -37,6 +38,7 @@ app.use(paymentsRoutes)
 // refactor
 app.use(authRoutesRefactor)
 app.use(usersRoutesRefactor)
+app.use(wargaRoutesRefactor)
 
 // Home
 app.get("/", (req, res) => {

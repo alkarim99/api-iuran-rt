@@ -1,26 +1,9 @@
 const { ObjectId } = require("mongodb")
 const { collWarga } = require("../config/database")
 
-const getAllOption = async (keyword, sort_by, order = 1) => {
+const getAllOption = async () => {
   try {
-    let query,
-      options = {}
-
-    if (keyword) {
-      let keywordRegex = new RegExp(keyword, "i")
-      query["$or"] = [{ name: keywordRegex }, { address: keywordRegex }]
-    }
-
-    let sort = {}
-    if (sort_by) {
-      sort[sort_by] = order === -1 ? -1 : 1
-      options.sort = sort
-    } else {
-      sort = { address: 1 }
-      options.sort = sort
-    }
-
-    const data = await collWarga.find(query).toArray()
+    const data = await collWarga.find({}).toArray()
 
     return data
   } catch (err) {

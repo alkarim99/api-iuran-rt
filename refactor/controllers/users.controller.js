@@ -1,8 +1,6 @@
 const bcrypt = require("bcrypt")
 const saltRounds = 10
-const jwt = require("jsonwebtoken")
 const { idSchema, updateSchema } = require("../../dto/users/request")
-const { userEntity } = require("../../entities/user.entity")
 const usersRepository = require("../../repositories/users.repository")
 const { userResponse } = require("../../dto/users/response")
 

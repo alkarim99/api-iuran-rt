@@ -26,9 +26,7 @@ const getAllOption = async (req, res) => {
 
 const getAll = async (req, res) => {
   try {
-    const { error, value } = filterSchema.validate({
-      ...req?.query,
-    })
+    const { error, value } = filterSchema.validate(req?.query)
     if (error) {
       return res.status(400).send({
         status: false,

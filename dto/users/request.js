@@ -5,6 +5,7 @@ const idSchema = Joi.object({
 })
 
 const updateSchema = Joi.object({
+  id: Joi.string().required(),
   name: Joi.string().required(),
   email: Joi.string().email().required(),
   role: Joi.string().required(),

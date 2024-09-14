@@ -1,4 +1,4 @@
-const { detailsPaymentEntity } = require("../../entities/payment.entity")
+const { detailsPaymentEntity } = require("../entities/payment.entity")
 
 const getAllMonthsBetween = (data) => {
   const result = []

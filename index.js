@@ -6,14 +6,8 @@ const bodyParser = require("body-parser")
 const wargasRoutes = require("./routes/wargas.route")
 const paymentsRoutes = require("./routes/payments.route")
 const usersRoutes = require("./routes/users.route")
-const authRoutes = require("./routes/auth.routes")
+const authRoutes = require("./routes/auth.route")
 const invalidRoutes = require("./routes/404.route")
-
-// refactor
-const authRoutesRefactor = require("./refactor/routes/auth.route")
-const usersRoutesRefactor = require("./refactor/routes/users.route")
-const wargaRoutesRefactor = require("./refactor/routes/wargas.route")
-const paymentRoutesRefactor = require("./refactor/routes/payments.route")
 
 const helmet = require("helmet")
 const xss = require("xss-clean")
@@ -31,16 +25,10 @@ app.use(xss())
 app.use(cors())
 
 // Routes
-// app.use(wargasRoutes)
-// app.use(paymentsRoutes)
-// app.use(usersRoutes)
-// app.use(authRoutes)
-
-// refactor
-app.use(authRoutesRefactor)
-app.use(usersRoutesRefactor)
-app.use(wargaRoutesRefactor)
-app.use(paymentRoutesRefactor)
+app.use(wargasRoutes)
+app.use(paymentsRoutes)
+app.use(usersRoutes)
+app.use(authRoutes)
 
 // Home
 app.get("/", (req, res) => {

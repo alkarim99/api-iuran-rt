@@ -1,108 +1,77 @@
+const { ObjectId } = require("mongodb")
 const model = require("../repositories/payments.repository")
-const jwt = require("jsonwebtoken")
-const { getToken } = require("../middleware/jwt.middleware")
-
-const validationData = (data, res) => {
-  if (!data?.warga_id) {
-    return res.status(400).send({
-      status: false,
-      message: "Bad Request. Param warga_id not found.",
-    })
-  }
-  if (!data?.period_start) {
-    return res.status(400).send({
-      status: false,
-      message: "Bad Request. Param period_start not found.",
-    })
-  }
-  if (!data?.period_end) {
-    return res.status(400).send({
-      status: false,
-      message: "Bad Request. Param period_start not found.",
-    })
-  }
-  if (!data?.nominal) {
-    return res.status(400).send({
-      status: false,
-      message: "Bad Request. Param nominal not found.",
-    })
-  }
-  if (
-    data?.payment_method.toLowerCase() != "cash" &&
-    data?.payment_method.toLowerCase() != "transfer"
-  ) {
-    return res.status(400).send({
-      status: false,
-      message: "Bad Request. Param payment_method not valid.",
-    })
-  }
-  if (!data?.pay_at) {
-    return res.status(400).send({
-      status: false,
-      message: "Bad Request. Param pay_at not found.",
-    })
-  }
-}
-
-const getAllMonthsBetween = (data) => {
-  const result = []
-
-  const nominal = data?.nominal / data?.number_of_period
-
-  // Start from periodStart and iterate until periodEnd
-  let currentDate = new Date(data?.period_start)
-  const endDate = new Date(data?.period_end)
-
-  // Iterate over each date
-  while (currentDate <= endDate) {
-    // Extract month and year from the current date
-    const month = currentDate.toLocaleString("default", { month: "long" })
-    const year = currentDate.getFullYear()
-
-    // Format month and year as a string (e.g., "April 2024")
-    const monthYear = `${month} ${year}`
-
-    const document = {
-      period: monthYear,
-      nominal,
-      pay_at: data?.pay_at,
-      created_at: data?.created_at,
-    }
-
-    // Add the unique combination of month and year to the array
-    if (!result.includes(monthYear)) {
-      result.push(document)
-    }
-
-    // Move to the next month
-    currentDate.setMonth(currentDate.getMonth() + 1)
-  }
-
-  return result
-}
+const { collWarga } = require("../config/database")
+const { paymentEntity } = require("../entities/payment.entity")
+const { wargaDataEmbed } = require("../entities/warga.entity")
+const {
+  idSchema,
+  createSchema,
+  updateSchema,
+  filterSchema,
+} = require("../dto/payments/request")
+const {
+  getAllMonthsBetween,
+  getNumberOfPeriods,
+  getDetailsPayment,
+} = require("../helpers/payment.helper")
 
 const getAll = async (req, res) => {
   try {
-    jwt.verify(
-      getToken(req),
-      process.env.JWT_PRIVATE_KEY,
-      async (err, { _id, role }) => {
-        if (role == "admin") {
-          const { keyword, sort_by, page, limit } = req?.query
-          const data = await model.getAll(keyword, sort_by, page, limit)
-          res.send({
-            status: true,
-            message: "Get data success",
-            ...data,
-          })
-        } else {
-          res.status(401).send({
-            status: false,
-            message: "Unauthorized",
-          })
-        }
-      }
+    const { error, value } = filterSchema.validate(req?.query)
+    if (error) {
+      return res.status(400).send({
+        status: false,
+        message: error.details[0].message,
+      })
+    }
+
+    const data = await model.getAll(
+      value?.keyword,
+      value?.sort_by,
+      value?.page,
+      value?.limit
     )
+    res.send({
+      status: true,
+      message: "Get data success",
+      ...data,
+    })
+  } catch (err) {
+    res.status(500).send({
+      status: false,
+      message: "Error fetching data",
+      error: err.message,
+    })
+  }
+}
+
+const getByPayAt = async (req, res) => {
+  try {
+    const { error, value } = filterSchema.validate(req?.query)
+    if (error) {
+      return res.status(400).send({
+        status: false,
+        message: error.details[0].message,
+      })
+    }
+
+    const { keyword, sort_by, page, limit, pay_at } = value
+    const payAt = new Date(pay_at)
+    const firstDay = new Date(payAt.getFullYear(), payAt.getMonth(), 1)
+    const lastDay = new Date(payAt.getFullYear(), payAt.getMonth() + 1, 0)
+    const data = await model.getByPayAt(
+      firstDay,
+      lastDay,
+      keyword,
+      sort_by,
+      page,
+      limit
+    )
+    res.send({
+      status: true,
+      message: "Get data success",
+      ...data,
+    })
   } catch (err) {
     res.status(500).send({
       status: false,
@@ -114,28 +83,19 @@ const getAll = async (req, res) => {
 
 const getByID = async (req, res) => {
   try {
-    jwt.verify(
-      getToken(req),
-      process.env.JWT_PRIVATE_KEY,
-      async (err, { _id, role }) => {
-        if (role == "admin") {
-          const {
-            params: { id },
-          } = req
-          const data = await model.getByID(id)
-          res.send({
-            status: true,
-            message: "Get data success",
-            data,
-          })
-        } else {
-          res.status(401).send({
-            status: false,
-            message: "Unauthorized",
-          })
-        }
-      }
-    )
+    const { error, value } = idSchema.validate(req?.params)
+    if (error) {
+      return res.status(400).send({
+        status: false,
+        message: error.details[0].message,
+      })
+    }
+    const data = await model.getByID(value?.id)
+    res.send({
+      status: true,
+      message: "Get data success",
+      data,
+    })
   } catch (err) {
     console.log(err)
     res.status(500).send({
@@ -148,29 +108,16 @@ const getByID = async (req, res) => {
 
 const getByWargaID = async (req, res) => {
   try {
-    jwt.verify(
-      getToken(req),
-      process.env.JWT_PRIVATE_KEY,
-      async (err, { _id, role }) => {
-        if (role == "admin") {
-          const {
-            params: { id },
-            query: { sort_by },
-          } = req
-          const data = await model.getByWargaID(id, sort_by)
-          res.send({
-            status: true,
-            message: "Get data success",
-            data,
-          })
-        } else {
-          res.status(401).send({
-            status: false,
-            message: "Unauthorized",
-          })
-        }
-      }
-    )
+    const {
+      params: { id },
+      query: { sort_by },
+    } = req
+    const data = await model.getByWargaID(id, sort_by)
+    res.send({
+      status: true,
+      message: "Get data success",
+      data,
+    })
   } catch (err) {
     console.log(err)
     res.status(500).send({
@@ -183,32 +130,13 @@ const getByWargaID = async (req, res) => {
 
 const getTotalIncome = async (req, res) => {
   try {
-    jwt.verify(
-      getToken(req),
-      process.env.JWT_PRIVATE_KEY,
-      async (err, { _id, role }) => {
-        if (role == "admin") {
-          const { start, end, sort_by, page, limit } = req?.query
-          const data = await model.getTotalIncome(
-            start,
-            end,
-            sort_by,
-            page,
-            limit
-          )
-          res.send({
-            status: true,
-            message: "Get data success",
-            ...data,
-          })
-        } else {
-          res.status(401).send({
-            status: false,
-            message: "Unauthorized",
-          })
-        }
-      }
-    )
+    const { start, end, sort_by, page, limit } = req?.query
+    const data = await model.getTotalIncome(start, end, sort_by, page, limit)
+    res.send({
+      status: true,
+      message: "Get data success",
+      ...data,
+    })
   } catch (err) {
     console.log(err)
     res.status(500).send({
@@ -221,28 +149,19 @@ const getTotalIncome = async (req, res) => {
 
 const getLatestPeriodByWargaID = async (req, res) => {
   try {
-    jwt.verify(
-      getToken(req),
-      process.env.JWT_PRIVATE_KEY,
-      async (err, { _id, role }) => {
-        if (role == "admin") {
-          const {
-            params: { id },
-          } = req
-          const latest_period = await model.getLatestPeriodByWargaID(id)
-          res.send({
-            status: true,
-            message: "Get data success",
-            latest_period,
-          })
-        } else {
-          res.status(401).send({
-            status: false,
-            message: "Unauthorized",
-          })
-        }
-      }
-    )
+    const { error, value } = idSchema.validate(req?.params)
+    if (error) {
+      return res.status(400).send({
+        status: false,
+        message: error.details[0].message,
+      })
+    }
+    const latest_period = await model.getLatestPeriodByWargaID(value?.id)
+    res.send({
+      status: true,
+      message: "Get data success",
+      latest_period,
+    })
   } catch (err) {
     console.log(err)
     res.status(500).send({
@@ -255,35 +174,22 @@ const getLatestPeriodByWargaID = async (req, res) => {
 
 const getReports = async (req, res) => {
   try {
-    jwt.verify(
-      getToken(req),
-      process.env.JWT_PRIVATE_KEY,
-      async (err, { _id, role }) => {
-        if (role == "admin") {
-          const {
-            params: { id },
-            query: { sort_by },
-          } = req
-          const data = await model.getByWargaID(id, sort_by)
-          let reports = []
-          data.forEach((payment) => {
-            const months = getAllMonthsBetween(payment)
-            reports.push(months)
-          })
-          reports = reports.reduce((acc, val) => acc.concat(val), [])
-          res.send({
-            status: true,
-            message: "Get data success",
-            reports,
-          })
-        } else {
-          res.status(401).send({
-            status: false,
-            message: "Unauthorized",
-          })
-        }
-      }
-    )
+    const {
+      params: { id },
+      query: { sort_by },
+    } = req
+    const data = await model.getByWargaID(id, sort_by)
+    let reports = []
+    data.forEach((payment) => {
+      const months = getAllMonthsBetween(payment)
+      reports.push(months)
+    })
+    reports = reports.reduce((acc, val) => acc.concat(val), [])
+    res.send({
+      status: true,
+      message: "Get data success",
+      reports,
+    })
   } catch (err) {
     console.log(err)
     res.status(500).send({
@@ -296,41 +202,37 @@ const getReports = async (req, res) => {
 
 const create = async (req, res) => {
   try {
-    jwt.verify(
-      getToken(req),
-      process.env.JWT_PRIVATE_KEY,
-      async (err, { _id, role }) => {
-        if (role == "admin") {
-          const data = req.body
-          validationData(data, res)
-          const period_start = new Date(data?.period_start)
-          const period_end = new Date(data?.period_end)
-          const number_of_period =
-            (period_end.getFullYear() - period_start.getFullYear()) * 12 +
-            (period_end.getMonth() - period_start.getMonth()) +
-            1
-          data.number_of_period = number_of_period
-          const insertedId = await model.create(data)
-          if (insertedId) {
-            res.send({
-              status: true,
-              message: "Payment created successfully",
-              insertedId,
-            })
-          } else {
-            res.status(400).send({
-              status: false,
-              message: "Failed to create payment.",
-            })
-          }
-        } else {
-          res.status(401).send({
-            status: false,
-            message: "Unauthorized",
-          })
-        }
-      }
-    )
+    const { error, value } = createSchema.validate(req?.body)
+    if (error) {
+      return res.status(400).send({
+        status: false,
+        message: error.details[0].message,
+      })
+    }
+    let data = value
+
+    const dataWarga = await collWarga.findOne({
+      _id: new ObjectId(data?.warga_id),
+    })
+    data.warga = new wargaDataEmbed(dataWarga)
+
+    data = getNumberOfPeriods(data)
+    data = getDetailsPayment(data)
+
+    const payment = new paymentEntity(data)
+    const insertedId = await model.create(payment)
+    if (insertedId) {
+      res.send({
+        status: true,
+        message: "Payment created successfully",
+        insertedId,
+      })
+    } else {
+      res.status(400).send({
+        status: false,
+        message: "Failed to create payment.",
+      })
+    }
   } catch (err) {
     console.error(err)
     res.status(500).send({
@@ -343,46 +245,35 @@ const create = async (req, res) => {
 
 const update = async (req, res) => {
   try {
-    jwt.verify(
-      getToken(req),
-      process.env.JWT_PRIVATE_KEY,
-      async (err, { _id, role }) => {
-        if (role == "admin") {
-          const data = req.body
-          if (!data?.id) {
-            return res.status(400).send({
-              status: false,
-              message: "Bad Request. Param id not found.",
-            })
-          }
-          validationData(data, res)
-          const period_start = new Date(data?.period_start)
-          const period_end = new Date(data?.period_end)
-          const number_of_period =
-            (period_end.getFullYear() - period_start.getFullYear()) * 12 +
-            (period_end.getMonth() - period_start.getMonth()) +
-            1
-          data.number_of_period = number_of_period
-          const isUpdated = await model.update(data)
-          if (isUpdated) {
-            res.send({
-              status: true,
-              message: "Payment updated successfully",
-            })
-          } else {
-            res.status(404).send({
-              status: false,
-              message: "Failed to update payment. Data not found.",
-            })
-          }
-        } else {
-          res.status(401).send({
-            status: false,
-            message: "Unauthorized",
-          })
-        }
-      }
-    )
+    const { error, value } = updateSchema.validate(req?.body)
+    if (error) {
+      return res.status(400).send({
+        status: false,
+        message: error.details[0].message,
+      })
+    }
+    let data = value
+
+    const dataWarga = await collWarga.findOne({
+      _id: new ObjectId(data?.warga_id),
+    })
+    data.warga = new wargaDataEmbed(dataWarga)
+
+    data = getNumberOfPeriods(data)
+    data = getDetailsPayment(data)
+
+    const isUpdated = await model.update(data)
+    if (isUpdated) {
+      res.send({
+        status: true,
+        message: "Payment updated successfully",
+      })
+    } else {
+      res.status(404).send({
+        status: false,
+        message: "Failed to update payment. Data not found.",
+      })
+    }
   } catch (err) {
     console.error(err)
     res.status(500).send({
@@ -395,34 +286,26 @@ const update = async (req, res) => {
 
 const deletePayment = async (req, res) => {
   try {
-    jwt.verify(
-      getToken(req),
-      process.env.JWT_PRIVATE_KEY,
-      async (err, { _id, role }) => {
-        if (role == "admin") {
-          const {
-            params: { id },
-          } = req
-          const isDeleted = await model.deletePayment(id)
-          if (isDeleted) {
-            res.send({
-              status: true,
-              message: "Payment deleted successfully",
-            })
-          } else {
-            res.status(404).send({
-              status: false,
-              message: "Payment not found or no changes applied",
-            })
-          }
-        } else {
-          res.status(401).send({
-            status: false,
-            message: "Unauthorized",
-          })
-        }
-      }
-    )
+    const { error, value } = idSchema.validate(req?.params)
+    if (error) {
+      return res.status(400).send({
+        status: false,
+        message: error.details[0].message,
+      })
+    }
+    const { id } = value
+    const isDeleted = await model.deletePayment(id)
+    if (isDeleted) {
+      res.send({
+        status: true,
+        message: "Payment deleted successfully",
+      })
+    } else {
+      res.status(404).send({
+        status: false,
+        message: "Payment not found or no changes applied",
+      })
+    }
   } catch (err) {
     console.log(err)
     res.status(500).send({
@@ -435,6 +318,7 @@ const deletePayment = async (req, res) => {
 
 module.exports = {
   getAll,
+  getByPayAt,
   getByID,
   getByWargaID,
   getTotalIncome,

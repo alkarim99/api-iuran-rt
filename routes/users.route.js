@@ -1,12 +1,15 @@
 const router = require("express").Router()
-const usersController = require("../controllers/users.controller")
-const { checkToken } = require("../middleware/jwt.middleware")
+const {
+  getAll,
+  getByID,
+  update,
+  deleteUser,
+} = require("../controllers/users.controller")
+const { adminRole } = require("../middleware/middleware")
 
-router.get("/users/:id", checkToken, usersController.getByID)
-router.get("/users/email", checkToken, usersController.getByEmail)
-router.get("/users", checkToken, usersController.getAll)
-router.post("/users", checkToken, usersController.create)
-router.patch("/users", checkToken, usersController.update)
-router.delete("/users/:id", checkToken, usersController.deleteUser)
+router.get("/users", adminRole, getAll)
+router.get("/users/:id", adminRole, getByID)
+router.patch("/users", adminRole, update)
+router.delete("/users/:id", adminRole, deleteUser)
 
 module.exports = router

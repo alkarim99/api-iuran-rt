@@ -6,7 +6,7 @@ const bodyParser = require("body-parser")
 const wargasRoutes = require("./routes/wargas.route")
 const paymentsRoutes = require("./routes/payments.route")
 const usersRoutes = require("./routes/users.route")
-const authRoutes = require("./routes/auth.routes")
+const authRoutes = require("./routes/auth.route")
 const invalidRoutes = require("./routes/404.route")
 
 const helmet = require("helmet")
@@ -39,6 +39,5 @@ app.get("/", (req, res) => {
 app.use(invalidRoutes)
 
 app.listen(8000, () => {
-  console.log("App running in port 8000")
-  console.log(process.env.NODE_ENV)
+  console.log(`App running in port 8000 ${process.env.NODE_ENV}`)
 })

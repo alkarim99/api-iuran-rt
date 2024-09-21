@@ -1,6 +1,5 @@
 const { ObjectId } = require("mongodb")
-const { collectionPayment, collectionWarga } = require("../config/database")
-const entity = require("../entities/payment.entity")
+const { collPayment, collWarga } = require("../config/database")
 
 const getAll = async (keyword, sort_by, page = 1, limit = 20) => {
   try {
@@ -24,8 +23,57 @@ const getAll = async (keyword, sort_by, page = 1, limit = 20) => {
       options.sort = sort
     }
 
-    const data = await collectionPayment.find(query, options).toArray()
-    const totalItems = await collectionPayment.countDocuments(query)
+    const data = await collPayment.find(query, options).toArray()
+    const totalItems = await collPayment.countDocuments(query)
+    const totalPages = Math.ceil(totalItems / limit)
+
+    const response = {
+      currentPage: parseInt(page),
+      totalPages: totalPages,
+      totalCount: totalItems,
+      perPage: parseInt(limit),
+      data: data,
+    }
+
+    return response
+  } catch (err) {
+    console.error("Error retrieving data from MongoDB:", err)
+    throw err
+  }
+}
+
+const getByPayAt = async (
+  firstDay,
+  lastDay,
+  keyword,
+  sort_by,
+  page = 1,
+  limit = 20
+) => {
+  try {
+    let query = {}
+    let options = {
+      skip: (parseInt(page) - 1) * parseInt(limit),
+      limit: parseInt(limit),
+    }
+
+    if (keyword) {
+      let keywordRegex = new RegExp(keyword, "i")
+      query["$or"] = [
+        { "warga.name": keywordRegex },
+        { "warga.address": keywordRegex },
+      ]
+    }
+    query["$and"] = [{ pay_at: { $gte: firstDay, $lte: lastDay } }]
+
+    let sort = {}
+    if (sort_by) {
+      sort[sort_by] = sort_by === "asc" ? 1 : -1
+      options.sort = sort
+    }
+
+    const data = await collPayment.find(query, options).toArray()
+    const totalItems = await collPayment.countDocuments(query)
     const totalPages = Math.ceil(totalItems / limit)
 
     const response = {
@@ -45,14 +93,11 @@ const getAll = async (keyword, sort_by, page = 1, limit = 20) => {
 
 const getByID = async (id) => {
   try {
-    // await client.connect()
-    const data = await collectionPayment.findOne({ _id: new ObjectId(id) })
+    const data = await collPayment.findOne({ _id: new ObjectId(id) })
     return data
   } catch (err) {
     console.error("Error connecting to MongoDB:", err)
     throw err
-  } finally {
-    // client.close()
   }
 }
 
@@ -66,15 +111,13 @@ const getByWargaID = async (id, sort_by) => {
       sort[sort_by] = sort_by === "asc" ? 1 : -1
       options.sort = sort
     }
-    const data = await collectionPayment
+    const data = await collPayment
       .find({ "warga._id": new ObjectId(id) }, options)
       .toArray()
     return data
   } catch (err) {
     console.error("Error connecting to MongoDB:", err)
     throw err
-  } finally {
-    // client.close()
   }
 }
 
@@ -94,8 +137,8 @@ const getTotalIncome = async (start, end, sort_by, page = 1, limit = 20) => {
       options.sort = sort
     }
 
-    const data = await collectionPayment.find(query, options).toArray()
-    const totalItems = await collectionPayment.countDocuments(query)
+    const data = await collPayment.find(query, options).toArray()
+    const totalItems = await collPayment.countDocuments(query)
     const totalPages = Math.ceil(totalItems / limit)
     let totalIncome = 0
     data.forEach((payment) => {
@@ -115,15 +158,12 @@ const getTotalIncome = async (start, end, sort_by, page = 1, limit = 20) => {
   } catch (err) {
     console.error("Error connecting to MongoDB:", err)
     throw err
-  } finally {
-    // client.close()
   }
 }
 
 const getLatestPeriodByWargaID = async (id) => {
   try {
-    // await client.connect()
-    const data = await collectionPayment.findOne(
+    const data = await collPayment.findOne(
       { "warga._id": new ObjectId(id) },
       { sort: { pay_at: -1 }, projection: { period_end: 1, _id: 0 } }
     )
@@ -131,37 +171,22 @@ const getLatestPeriodByWargaID = async (id) => {
   } catch (err) {
     console.error("Error connecting to MongoDB:", err)
     throw err
-  } finally {
-    // client.close()
   }
 }
 
 const create = async (data) => {
   try {
-    // await client.connect()
-    const dataWarga = await collectionWarga.findOne({
-      _id: new ObjectId(data?.warga_id),
-    })
-    data.warga = {
-      _id: dataWarga?._id,
-      name: dataWarga?.name,
-      address: dataWarga?.address,
-    }
-    const payment = entity.paymentEntity(data)
-    const result = await collectionPayment.insertOne(payment)
+    const result = await collPayment.insertOne(data)
     return result.insertedId
   } catch (err) {
     console.error("Error creating payment:", err)
     throw err
-  } finally {
-    // client.close()
   }
 }
 
 const update = async (data) => {
   try {
-    // await client.connect()
-    const dataWarga = await collectionWarga.findOne({
+    const dataWarga = await collWarga.findOne({
       _id: new ObjectId(data?.warga_id),
     })
     const updateData = {
@@ -177,10 +202,11 @@ const update = async (data) => {
         nominal: data?.nominal,
         payment_method: data?.payment_method,
         pay_at: new Date(data?.pay_at),
+        details_payment: data?.details_payment,
         updated_at: new Date(),
       },
     }
-    const result = await collectionPayment.updateOne(
+    const result = await collPayment.updateOne(
       { _id: new ObjectId(data?.id) },
       updateData
     )
@@ -188,26 +214,22 @@ const update = async (data) => {
   } catch (err) {
     console.error("Error updating payment:", err)
     throw err
-  } finally {
-    // client.close()
   }
 }
 
 const deletePayment = async (id) => {
   try {
-    // await client.connect()
-    const result = await collectionPayment.deleteOne({ _id: new ObjectId(id) })
+    const result = await collPayment.deleteOne({ _id: new ObjectId(id) })
     return result.deletedCount > 0 // Return true if a document was deleted
   } catch (err) {
     console.error("Error deleting payment:", err)
     throw err
-  } finally {
-    // client.close()
   }
 }
 
 module.exports = {
   getAll,
+  getByPayAt,
   getByID,
   getByWargaID,
   getTotalIncome,

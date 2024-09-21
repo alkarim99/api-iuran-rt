@@ -2,6 +2,7 @@ const { MongoClient } = require("mongodb")
 
 let dbPayment = process.env.DB_LIVE_NAME_PAYMENT
 let collectionPayment = process.env.DB_LIVE_COLLECTION_PAYMENT
+let collectionExpense = process.env.DB_LIVE_COLLECTION_EXPENSE
 let collectionPaymentsType = process.env.DB_LIVE_COLLECTION_PAYMENT_TYPE
 
 let dbUser = process.env.DB_LIVE_NAME_USER
@@ -13,6 +14,7 @@ let collectionWarga = process.env.DB_LIVE_COLLECTION_WARGA
 if (process.env.NODE_ENV == "development" || process.env.NODE_ENV == "local") {
   dbPayment = process.env.DB_DEV_NAME_PAYMENT
   collectionPayment = process.env.DB_DEV_COLLECTION_PAYMENT
+  collectionExpense = process.env.DB_DEV_COLLECTION_EXPENSE
   collectionPaymentsType = process.env.DB_DEV_COLLECTION_PAYMENT_TYPE
 
   dbUser = process.env.DB_DEV_NAME_USER
@@ -25,6 +27,7 @@ if (process.env.NODE_ENV == "development" || process.env.NODE_ENV == "local") {
 // const client = new MongoClient(process.env.DB_URI)
 const client = new MongoClient(process.env.MONGODB_URI)
 const collPayment = client.db(dbPayment).collection(collectionPayment)
+const collExpense = client.db(dbPayment).collection(collectionExpense)
 const collPaymentType = client.db(dbPayment).collection(collectionPaymentsType)
 const collUser = client.db(dbUser).collection(collectionUser)
 const collWarga = client.db(dbWarga).collection(collectionWarga)
@@ -33,6 +36,7 @@ client.connect()
 
 module.exports = {
   collPayment,
+  collExpense,
   collPaymentType,
   collUser,
   collWarga,

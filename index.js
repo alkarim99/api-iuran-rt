@@ -7,6 +7,7 @@ const wargasRoutes = require("./routes/wargas.route")
 const paymentsRoutes = require("./routes/payments.route")
 const usersRoutes = require("./routes/users.route")
 const authRoutes = require("./routes/auth.route")
+const expenseRoutes = require("./routes/expense.route")
 const invalidRoutes = require("./routes/404.route")
 
 const helmet = require("helmet")
@@ -29,6 +30,7 @@ app.use(wargasRoutes)
 app.use(paymentsRoutes)
 app.use(usersRoutes)
 app.use(authRoutes)
+app.use(expenseRoutes)
 
 // Home
 app.get("/", (req, res) => {

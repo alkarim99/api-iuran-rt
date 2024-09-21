@@ -6,7 +6,7 @@ const bodyParser = require("body-parser")
 const wargasRoutes = require("./routes/wargas.route")
 const paymentsRoutes = require("./routes/payments.route")
 const usersRoutes = require("./routes/users.route")
-const authRoutes = require("./routes/auth.routes")
+const authRoutes = require("./routes/auth.route")
 const invalidRoutes = require("./routes/404.route")
 
 const helmet = require("helmet")

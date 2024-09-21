@@ -17,7 +17,13 @@ const getAll = async (req, res) => {
       })
     }
 
-    const data = await model.getAll(value)
+    const data = await model.getAll(
+      value?.keyword,
+      value?.sort_by,
+      value?.order,
+      value?.page,
+      value?.limit
+    )
     res.send({
       status: true,
       message: "Get data success",

@@ -52,7 +52,7 @@ const getByID = async (id) => {
   }
 }
 
-const getByPayAt = async (
+const getByTransactionAt = async (
   firstDay,
   lastDay,
   keyword,
@@ -74,10 +74,8 @@ const getByPayAt = async (
     query["$and"] = [{ transaction_at: { $gte: firstDay, $lte: lastDay } }]
 
     let sort = {}
-    if (sort_by) {
-      sort[sort_by] = sort_by === "asc" ? 1 : -1
-      options.sort = sort
-    }
+    sort["transaction_at"] = 1
+    options.sort = sort
 
     const data = await collExpense.find(query, options).toArray()
     const totalItems = await collExpense.countDocuments(query)
@@ -142,7 +140,7 @@ const deleteExpense = async (id) => {
 module.exports = {
   getAll,
   getByID,
-  getByPayAt,
+  getByTransactionAt,
   create,
   update,
   deleteExpense,

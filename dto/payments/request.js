@@ -26,6 +26,7 @@ const updateSchema = Joi.object({
 const filterSchema = Joi.object({
   pay_at: Joi.date(),
   keyword: Joi.string(),
+  payment_method: Joi.string(),
   sort_by: Joi.string(),
   page: Joi.number(),
   limit: Joi.number(),

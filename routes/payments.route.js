@@ -11,6 +11,7 @@ router.get(
 router.get("/payments/report/:id", adminRole, paymentsController.getReports)
 router.get("/payments/total", adminRole, paymentsController.getTotalIncome)
 router.get("/payments/rincian", adminRole, paymentsController.getByPayAt)
+router.get("/payments/method", adminRole, paymentsController.getByPaymentMethod)
 router.get("/payments/:id", adminRole, paymentsController.getByID)
 router.get("/payments", adminRole, paymentsController.getAll)
 router.post("/payments", adminRole, paymentsController.create)

@@ -2,6 +2,7 @@ const router = require("express").Router()
 const {
   getAll,
   getByID,
+  getByTransactionAt,
   create,
   update,
   deleteExpense,
@@ -9,6 +10,7 @@ const {
 const { adminRole } = require("../middleware/middleware")
 
 router.get("/expense", adminRole, getAll)
+router.get("/expense/periode", adminRole, getByTransactionAt)
 router.get("/expense/:id", adminRole, getByID)
 router.post("/expense", adminRole, create)
 router.put("/expense", adminRole, update)

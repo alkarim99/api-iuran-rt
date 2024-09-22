@@ -174,6 +174,36 @@ const getLatestPeriodByWargaID = async (id) => {
   }
 }
 
+const getByPaymentMethod = async (
+  firstDay,
+  lastDay,
+  paymentMethod
+) => {
+  try {
+    let query = {}
+
+    query["$and"] = [
+      { pay_at: { $gte: firstDay, $lte: lastDay } },
+      {
+        payment_method: paymentMethod,
+      },
+    ]
+
+    const data = await collPayment.find(query).toArray()
+    const totalItems = await collPayment.countDocuments(query)
+
+    const response = {
+      totalCount: totalItems,
+      data: data,
+    }
+
+    return response
+  } catch (err) {
+    console.error("Error connecting to MongoDB:", err)
+    throw err
+  }
+}
+
 const create = async (data) => {
   try {
     const result = await collPayment.insertOne(data)
@@ -232,6 +262,7 @@ module.exports = {
   getByPayAt,
   getByID,
   getByWargaID,
+  getByPaymentMethod,
   getTotalIncome,
   getLatestPeriodByWargaID,
   create,

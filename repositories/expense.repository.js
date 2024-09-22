@@ -52,7 +52,7 @@ const getByID = async (id) => {
   }
 }
 
-const getByPayAt = async (
+const getByTransactionAt = async (
   firstDay,
   lastDay,
   keyword,
@@ -142,7 +142,7 @@ const deleteExpense = async (id) => {
 module.exports = {
   getAll,
   getByID,
-  getByPayAt,
+  getByTransactionAt,
   create,
   update,
   deleteExpense,

@@ -63,6 +63,57 @@ const getByID = async (req, res) => {
   }
 }
 
+const getByTransactionAt = async (req, res) => {
+  try {
+    const { error, value } = filterSchema.validate(req?.query)
+    if (error) {
+      return res.status(400).send({
+        status: false,
+        message: error.details[0].message,
+      })
+    }
+
+    const { transaction_at, keyword, sort_by, order, page, limit } = value
+    const transactionAt = new Date(transaction_at)
+    const firstDay = new Date(
+      transactionAt.getFullYear(),
+      transactionAt.getMonth(),
+      1
+    )
+    const lastDay = new Date(
+      transactionAt.getFullYear(),
+      transactionAt.getMonth() + 1,
+      0
+    )
+    const data = await model.getByTransactionAt(
+      firstDay,
+      lastDay,
+      keyword,
+      sort_by,
+      page,
+      limit
+    )
+
+    let totalNominal = 0
+    data?.data?.forEach((element) => {
+      totalNominal = totalNominal + element?.nominal
+    })
+
+    res.send({
+      status: true,
+      message: "Get data success",
+      totalNominal,
+      ...data,
+    })
+  } catch (err) {
+    res.status(500).send({
+      status: false,
+      message: "Error fetching data",
+      error: err.message,
+    })
+  }
+}
+
 const create = async (req, res) => {
   try {
     const { error, value } = createSchema.validate(req?.body)
@@ -160,6 +211,7 @@ const deleteExpense = async (req, res) => {
 module.exports = {
   getAll,
   getByID,
+  getByTransactionAt,
   create,
   update,
   deleteExpense,

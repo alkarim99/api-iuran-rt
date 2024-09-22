@@ -81,6 +81,46 @@ const getByPayAt = async (req, res) => {
   }
 }
 
+const getByPaymentMethod = async (req, res) => {
+  try {
+    const { error, value } = filterSchema.validate(req?.query)
+    if (error) {
+      return res.status(400).send({
+        status: false,
+        message: error.details[0].message,
+      })
+    }
+
+    const { pay_at, payment_method } = value
+    const payAt = new Date(pay_at)
+    const firstDay = new Date(payAt.getFullYear(), payAt.getMonth(), 1)
+    const lastDay = new Date(payAt.getFullYear(), payAt.getMonth() + 1, 0)
+    const data = await model.getByPaymentMethod(
+      firstDay,
+      lastDay,
+      payment_method
+    )
+
+    let totalNominal = 0
+    data?.data?.forEach((element) => {
+      totalNominal = totalNominal + element?.nominal
+    })
+
+    res.send({
+      status: true,
+      message: "Get data success",
+      totalNominal,
+      ...data,
+    })
+  } catch (err) {
+    res.status(500).send({
+      status: false,
+      message: "Error fetching data",
+      error: err.message,
+    })
+  }
+}
+
 const getByID = async (req, res) => {
   try {
     const { error, value } = idSchema.validate(req?.params)
@@ -321,6 +361,7 @@ module.exports = {
   getByPayAt,
   getByID,
   getByWargaID,
+  getByPaymentMethod,
   getTotalIncome,
   getLatestPeriodByWargaID,
   getReports,

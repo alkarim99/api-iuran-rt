@@ -174,11 +174,7 @@ const getLatestPeriodByWargaID = async (id) => {
   }
 }
 
-const getByPaymentMethod = async (
-  firstDay,
-  lastDay,
-  paymentMethod
-) => {
+const getByPaymentMethod = async (firstDay, lastDay, paymentMethod) => {
   try {
     let query = {}
 
@@ -189,7 +185,13 @@ const getByPaymentMethod = async (
       },
     ]
 
-    const data = await collPayment.find(query).toArray()
+    let options = {}
+
+    let sort = {}
+    sort["pay_at"] = 1
+    options.sort = sort
+
+    const data = await collPayment.find(query, options).toArray()
     const totalItems = await collPayment.countDocuments(query)
 
     const response = {

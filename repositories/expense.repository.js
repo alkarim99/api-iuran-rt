@@ -1,7 +1,13 @@
 const { ObjectId } = require("mongodb")
 const { collExpense } = require("../config/database")
 
-const getAll = async (keyword, sort_by, order = 1, page = 1, limit = 20) => {
+const getAll = async (
+  keyword,
+  sort_by = "transaction_at",
+  order = 1,
+  page = 1,
+  limit = 20
+) => {
   try {
     let query = {}
     let options = {
@@ -62,10 +68,7 @@ const getByTransactionAt = async (
 ) => {
   try {
     let query = {}
-    let options = {
-      skip: (parseInt(page) - 1) * parseInt(limit),
-      limit: parseInt(limit),
-    }
+    let options = {}
 
     if (keyword) {
       let keywordRegex = new RegExp(keyword, "i")

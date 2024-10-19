@@ -4,7 +4,8 @@ class paymentTypeEntity {
   constructor(data) {
     this._id = new ObjectId()
     this.name = data?.name
-    this.details = new Array()
+    this.nominal = data?.nominal
+    this.details = data?.details
     this.created_at = new Date()
     this.updated_at = new Date()
     this._class = "PaymentType"
@@ -13,7 +14,7 @@ class paymentTypeEntity {
 
 class detailsEntity {
   constructor(name, value) {
-    this.name = name;
+    this.name = name
     this.value = value
   }
 }

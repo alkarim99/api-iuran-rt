@@ -6,6 +6,7 @@ const bodyParser = require("body-parser")
 // v1
 const wargasRoutes = require("./routes/wargas.route")
 const paymentsRoutes = require("./routes/payments.route")
+const paymentTypeRoutes = require("./routes/paymentType.route")
 const usersRoutes = require("./routes/users.route")
 const authRoutes = require("./routes/auth.route")
 const expenseRoutes = require("./routes/expense.route")
@@ -29,9 +30,10 @@ app.use(xss())
 
 app.use(cors())
 
-// Routes v1  
+// Routes v1
 app.use(wargasRoutes)
 app.use(paymentsRoutes)
+app.use(paymentTypeRoutes)
 app.use(usersRoutes)
 app.use(authRoutes)
 app.use(expenseRoutes)

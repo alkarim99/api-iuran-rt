@@ -4,7 +4,7 @@ const entity = require("../entities/paymentType.entity")
 
 const getAll = async () => {
   try {
-    const data = await collPaymentType.find(query, options).toArray()
+    const data = await collPaymentType.find({}).toArray()
 
     return data
   } catch (err) {
@@ -25,8 +25,7 @@ const getByID = async (id) => {
 
 const create = async (data) => {
   try {
-    const paymentType = new entity.paymentTypeEntity(data)
-    const result = await collPaymentType.insertOne(paymentType)
+    const result = await collPaymentType.insertOne(data)
     return result.insertedId
   } catch (err) {
     console.error("Error creating payment type:", err)
@@ -54,7 +53,7 @@ const update = async (data) => {
   }
 }
 
-const deletePayment = async (id) => {
+const deletePaymentType = async (id) => {
   try {
     const result = await collPaymentType.deleteOne({
       _id: new ObjectId(id),
@@ -71,5 +70,5 @@ module.exports = {
   getByID,
   create,
   update,
-  deletePayment,
+  deletePaymentType,
 }

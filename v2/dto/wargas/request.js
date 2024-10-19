@@ -7,12 +7,14 @@ const idSchema = Joi.object({
 const createSchema = Joi.object({
   name: Joi.string().required(),
   address: Joi.string().required(),
+  paymentTypeId: Joi.string().required(),
 })
 
 const updateSchema = Joi.object({
   id: Joi.string().required(),
   name: Joi.string().required(),
   address: Joi.string().required(),
+  paymentTypeId: Joi.string().required(),
 })
 
 const filterSchema = Joi.object({

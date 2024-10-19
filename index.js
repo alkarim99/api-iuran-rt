@@ -14,6 +14,7 @@ const invalidRoutes = require("./routes/404.route")
 
 // v2
 const paymentsRoutesV2 = require("./v2/routes/payments.route")
+const wargasRoutesV2 = require("./v2/routes/wargas.route")
 
 const helmet = require("helmet")
 const xss = require("xss-clean")
@@ -40,6 +41,7 @@ app.use(expenseRoutes)
 
 // v2
 app.use(paymentsRoutesV2)
+app.use(wargasRoutesV2)
 
 // Home
 app.get("/", (req, res) => {

@@ -155,11 +155,7 @@ const create = async (data) => {
 const update = async (data) => {
   try {
     const updateData = {
-      $set: {
-        name: data?.name,
-        address: data?.address,
-        updated_at: new Date(),
-      },
+      $set: data,
     }
     const result = await collWarga.updateOne(
       { _id: new ObjectId(data?.id) },

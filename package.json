@@ -1,6 +1,6 @@
 {
   "name": "api-iuran-rt",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Backend for RT Dues Record App",
   "main": "index.js",
   "scripts": {

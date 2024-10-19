@@ -3,12 +3,16 @@ const express = require("express")
 const app = express()
 const bodyParser = require("body-parser")
 
+// v1
 const wargasRoutes = require("./routes/wargas.route")
 const paymentsRoutes = require("./routes/payments.route")
 const usersRoutes = require("./routes/users.route")
 const authRoutes = require("./routes/auth.route")
 const expenseRoutes = require("./routes/expense.route")
 const invalidRoutes = require("./routes/404.route")
+
+// v2
+const paymentsRoutesV2 = require("./v2/routes/payments.route")
 
 const helmet = require("helmet")
 const xss = require("xss-clean")
@@ -25,12 +29,15 @@ app.use(xss())
 
 app.use(cors())
 
-// Routes
+// Routes v1  
 app.use(wargasRoutes)
 app.use(paymentsRoutes)
 app.use(usersRoutes)
 app.use(authRoutes)
 app.use(expenseRoutes)
+
+// v2
+app.use(paymentsRoutesV2)
 
 // Home
 app.get("/", (req, res) => {

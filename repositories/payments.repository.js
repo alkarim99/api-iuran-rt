@@ -208,7 +208,7 @@ const getByPaymentMethod = async (firstDay, lastDay, paymentMethod) => {
 
 const create = async (data) => {
   try {
-    const result = await collPayment.insertOne(data)
+    const result = await collPayment.insert(data)
     return result.insertedId
   } catch (err) {
     console.error("Error creating payment:", err)

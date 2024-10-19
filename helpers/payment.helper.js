@@ -3,7 +3,7 @@ const { detailsPaymentEntity } = require("../entities/payment.entity")
 const getAllMonthsBetween = (data) => {
   const result = []
 
-  const nominal = data?.nominal / data?.number_of_period
+  const nominal = Math.floor(data?.nominal / data?.number_of_period)
 
   // Start from periodStart and iterate until periodEnd
   let currentDate = new Date(data?.period_start)

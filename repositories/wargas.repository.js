@@ -3,7 +3,43 @@ const { collWarga } = require("../config/database")
 
 const getAllOption = async () => {
   try {
-    const data = await collWarga.find({}).toArray()
+    let query = {}
+
+    // Aggregation pipeline
+    const pipeline = [
+      { $match: query },
+      {
+        // Add fields by splitting 'address' into two parts: prefix and numeric part
+        $addFields: {
+          addressPrefix: { $arrayElemAt: [{ $split: ["$address", "-"] }, 0] },
+          addressNumber: {
+            // Try converting to int; if conversion fails (e.g., '12A'), set addressNumber to null
+            $convert: {
+              input: { $arrayElemAt: [{ $split: ["$address", "-"] }, 1] },
+              to: "int",
+              onError: null, // Handle cases where conversion fails
+            },
+          },
+        },
+      },
+      {
+        // Sort by prefix (lexicographically) and numeric part
+        $sort: {
+          addressPrefix: 1,
+          addressNumber: 1,
+        },
+      },
+      {
+        // Optionally, project to remove the added fields and return only original data
+        $project: {
+          addressPrefix: 0,
+          addressNumber: 0,
+        },
+      },
+    ]
+
+    // Execute the aggregation pipeline
+    const data = await collWarga.aggregate(pipeline).toArray()
 
     return data
   } catch (err) {
@@ -15,26 +51,55 @@ const getAllOption = async () => {
 const getAll = async (keyword, sort_by, order = 1, page = 1, limit = 20) => {
   try {
     let query = {}
-    let options = {
-      skip: (parseInt(page) - 1) * parseInt(limit),
-      limit: parseInt(limit),
-    }
-
     if (keyword) {
       let keywordRegex = new RegExp(keyword, "i")
       query["$or"] = [{ name: keywordRegex }, { address: keywordRegex }]
     }
 
-    let sort = {}
-    if (sort_by) {
-      sort[sort_by] = order === -1 ? -1 : 1
-      options.sort = sort
-    } else {
-      sort = { address: 1 }
-      options.sort = sort
-    }
+    // Aggregation pipeline
+    const pipeline = [
+      { $match: query },
+      {
+        // Add fields by splitting 'address' into two parts: prefix and numeric part
+        $addFields: {
+          addressPrefix: { $arrayElemAt: [{ $split: ["$address", "-"] }, 0] },
+          addressNumber: {
+            // Try converting to int; if conversion fails (e.g., '12A'), set addressNumber to null
+            $convert: {
+              input: { $arrayElemAt: [{ $split: ["$address", "-"] }, 1] },
+              to: "int",
+              onError: null, // Handle cases where conversion fails
+            },
+          },
+        },
+      },
+      {
+        // Sort by prefix (lexicographically) and numeric part
+        $sort: {
+          addressPrefix: order === -1 ? -1 : 1,
+          addressNumber: order === -1 ? -1 : 1,
+        },
+      },
+      {
+        // Skip and limit for pagination
+        $skip: (parseInt(page) - 1) * parseInt(limit),
+      },
+      {
+        $limit: parseInt(limit),
+      },
+      {
+        // Optionally, project to remove the added fields and return only original data
+        $project: {
+          addressPrefix: 0,
+          addressNumber: 0,
+        },
+      },
+    ]
 
-    const data = await collWarga.find(query, options).toArray()
+    // Execute the aggregation pipeline
+    const data = await collWarga.aggregate(pipeline).toArray()
+
+    // Calculate total documents count (for pagination info)
     const totalItems = await collWarga.countDocuments(query)
     const totalPages = Math.ceil(totalItems / limit)
 

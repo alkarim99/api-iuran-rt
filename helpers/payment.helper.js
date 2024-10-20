@@ -1,4 +1,5 @@
 const { detailsPaymentEntity } = require("../entities/payment.entity")
+const modelPaymentType = require("../repositories/paymentType.repository")
 
 const getAllMonthsBetween = (data) => {
   const result = []
@@ -66,8 +67,21 @@ const getDetailsPayment = (data) => {
   return data
 }
 
+const checkPayment = async (data, dataWarga) => {
+  const paymentType = await modelPaymentType.getByID(dataWarga?.payment_type_id)
+  if (data?.nominal < paymentType?.nominal) {
+    return false
+  }
+  if (data?.nominal % paymentType?.nominal === 0) {
+    return true
+  }
+  
+  return true
+}
+
 module.exports = {
   getAllMonthsBetween,
   getNumberOfPeriods,
   getDetailsPayment,
+  checkPayment,
 }

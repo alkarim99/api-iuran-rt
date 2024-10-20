@@ -4,7 +4,7 @@ class paymentTypeEntity {
   constructor(data) {
     this._id = new ObjectId()
     this.name = data?.name
-    this.nominal = data?.nominal
+    this.nominal = parseInt(data?.nominal) || 0
     this.details = data?.details
     this.created_at = new Date()
     this.updated_at = new Date()
@@ -15,7 +15,7 @@ class paymentTypeEntity {
 class detailsEntity {
   constructor(name, value) {
     this.name = name
-    this.value = value
+    this.value = parseInt(value) || 0
   }
 }
 

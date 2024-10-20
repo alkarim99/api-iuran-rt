@@ -13,6 +13,7 @@ const {
   getAllMonthsBetween,
   getNumberOfPeriods,
   getDetailsPayment,
+  checkPayment,
 } = require("../../helpers/payment.helper")
 
 const create = async (req, res) => {
@@ -30,6 +31,14 @@ const create = async (req, res) => {
       _id: new ObjectId(data?.warga_id),
     })
     data.warga = new wargaDataEmbed(dataWarga)
+
+    const isValid = checkPayment(data, dataWarga)
+    if (isValid) {
+      return res.status(400).send({
+        status: false,
+        message: "Nominal not valid",
+      })
+    }
 
     data = getNumberOfPeriods(data)
     data = getDetailsPayment(data)

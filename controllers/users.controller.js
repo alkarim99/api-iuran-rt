@@ -82,7 +82,7 @@ const update = async (req, res) => {
 
     if (value?.password) {
       const salt = await bcrypt.genSalt(saltRounds)
-      value.password = await bcrypt.hash(value.password, salt)
+      payload.password = await bcrypt.hash(value.password, salt)
     }
 
     const isUpdated = await usersRepository.update(payload)

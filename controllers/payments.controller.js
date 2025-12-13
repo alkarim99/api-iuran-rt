@@ -28,6 +28,7 @@ const getAll = async (req, res) => {
     const data = await model.getAll(
       value?.keyword,
       value?.sort_by,
+      value?.order,
       value?.page,
       value?.limit
     )

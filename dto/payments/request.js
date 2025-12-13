@@ -28,6 +28,7 @@ const filterSchema = Joi.object({
   keyword: Joi.string(),
   payment_method: Joi.string(),
   sort_by: Joi.string(),
+  order: Joi.number(),
   page: Joi.number(),
   limit: Joi.number(),
 })

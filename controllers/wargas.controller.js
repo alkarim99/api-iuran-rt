@@ -6,6 +6,7 @@ const {
   filterSchema,
 } = require("../dto/wargas/request")
 const { wargaEntity } = require("../entities/warga.entity")
+const { syncWargaToPayments } = require("../workers/wargaSync.worker")
 
 const getAllOption = async (req, res) => {
   try {
@@ -165,6 +166,9 @@ const update = async (req, res) => {
 
     const isUpdated = await model.update(data)
     if (isUpdated) {
+      // Sync payment records asynchronously (Fire and Forget)
+      syncWargaToPayments(data.id, { name: data.name, address: data.address });
+
       res.send({
         status: true,
         message: "Warga updated successfully",

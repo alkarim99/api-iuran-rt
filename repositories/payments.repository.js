@@ -283,6 +283,25 @@ const getByPaymentMethod = async (firstDay, lastDay, paymentMethod) => {
     }
 }
 
+const getByWargaAndPeriod = async (wargaId, periodStart, periodEnd) => {
+    try {
+        const query = {
+            "warga._id": new ObjectId(wargaId),
+            $or: [
+                {
+                    period_start: {$lte: new Date(periodEnd)},
+                    period_end: {$gte: new Date(periodStart)},
+                },
+            ],
+        }
+        const data = await collPayment.findOne(query)
+        return data
+    } catch (err) {
+        console.error("Error connecting to MongoDB:", err)
+        throw err
+    }
+}
+
 const create = async (data) => {
     try {
         const result = await collPayment.insertOne(data)
@@ -341,6 +360,7 @@ module.exports = {
     getByPayAt,
     getByID,
     getByWargaID,
+    getByWargaAndPeriod,
     getByPaymentMethod,
     getTotalIncome,
     getLatestPeriodByWargaID,

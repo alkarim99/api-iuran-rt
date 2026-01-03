@@ -252,6 +252,18 @@ const create = async (req, res) => {
     }
     let data = value
 
+    const existingPayment = await model.getByWargaAndPeriod(
+      data.warga_id,
+      data.period_start,
+      data.period_end
+    )
+    if (existingPayment) {
+      return res.status(400).send({
+        status: false,
+        message: "Pembayaran pada periode tersebut sudah tercatat. Mohon cek ulang periode!",
+      })
+    }
+
     const dataWarga = await collWarga.findOne({
       _id: new ObjectId(data?.warga_id),
     })

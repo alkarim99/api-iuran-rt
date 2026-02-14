@@ -1,21 +1,21 @@
-const { ObjectId } = require("mongodb")
+const { ObjectId } = require("mongodb");
 
-class paymentTypeEntity {
+class PaymentTypeEntity {
   constructor(data) {
-    this._id = new ObjectId()
-    this.name = data?.name
-    this.details = new Array()
-    this.created_at = new Date()
-    this.updated_at = new Date()
-    this._class = "PaymentType"
+    this._id = new ObjectId();
+    this.name = data?.name;
+    this.details = new Array();
+    this.created_at = new Date();
+    this.updated_at = new Date();
+    this._class = "PaymentType";
   }
 }
 
-class detailsEntity {
+class DetailsEntity {
   constructor(name, value) {
     this.name = name;
-    this.value = value
+    this.value = value;
   }
 }
 
-module.exports = { paymentTypeEntity, detailsEntity }
+module.exports = { PaymentTypeEntity, DetailsEntity };

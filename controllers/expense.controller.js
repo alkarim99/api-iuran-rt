@@ -1,20 +1,20 @@
-const model = require("../repositories/expense.repository")
+const model = require("../repositories/expense.repository");
 const {
   idSchema,
   createSchema,
   updateSchema,
   filterSchema,
-} = require("../dto/expense/request")
-const { expenseEntity } = require("../entities/expense.entity")
+} = require("../dto/expense/request");
+const { ExpenseEntity } = require("../entities/expense.entity");
 
 const getAll = async (req, res) => {
   try {
-    const { error, value } = filterSchema.validate(req?.query)
+    const { error, value } = filterSchema.validate(req?.query);
     if (error) {
       return res.status(400).send({
         status: false,
         message: error.details[0].message,
-      })
+      });
     }
 
     const data = await model.getAll(
@@ -22,191 +22,191 @@ const getAll = async (req, res) => {
       value?.sort_by,
       value?.order,
       value?.page,
-      value?.limit
-    )
+      value?.limit,
+    );
     res.send({
       status: true,
       message: "Get data success",
       ...data,
-    })
+    });
   } catch (error) {
     res.status(500).send({
       status: false,
       message: "Error fetching data",
       error: error.message,
-    })
+    });
   }
-}
+};
 
 const getByID = async (req, res) => {
   try {
-    const { error, value } = idSchema.validate(req?.params)
+    const { error, value } = idSchema.validate(req?.params);
     if (error) {
       return res.status(400).send({
         status: false,
         message: error.details[0].message,
-      })
+      });
     }
 
-    const data = await model.getByID(value?.id)
+    const data = await model.getByID(value?.id);
     res.send({
       status: true,
       message: "Get data success",
       data,
-    })
+    });
   } catch (error) {
     res.status(500).send({
       status: false,
       message: "Error fetching data",
       error: error.message,
-    })
+    });
   }
-}
+};
 
 const getByTransactionAt = async (req, res) => {
   try {
-    const { error, value } = filterSchema.validate(req?.query)
+    const { error, value } = filterSchema.validate(req?.query);
     if (error) {
       return res.status(400).send({
         status: false,
         message: error.details[0].message,
-      })
+      });
     }
 
-    const { transaction_at, keyword, sort_by, order, page, limit } = value
-    const transactionAt = new Date(transaction_at)
+    const { transaction_at, keyword, sort_by, order, page, limit } = value;
+    const transactionAt = new Date(transaction_at);
     const firstDay = new Date(
       transactionAt.getFullYear(),
       transactionAt.getMonth(),
-      1
-    )
+      1,
+    );
     const lastDay = new Date(
       transactionAt.getFullYear(),
       transactionAt.getMonth() + 1,
-      0
-    )
+      0,
+    );
     const data = await model.getByTransactionAt(
       firstDay,
       lastDay,
       keyword,
       sort_by,
       page,
-      limit
-    )
+      limit,
+    );
 
-    let totalNominal = 0
+    let totalNominal = 0;
     data?.data?.forEach((element) => {
-      totalNominal = totalNominal + element?.nominal
-    })
+      totalNominal = totalNominal + element?.nominal;
+    });
 
     res.send({
       status: true,
       message: "Get data success",
       totalNominal,
       ...data,
-    })
+    });
   } catch (err) {
     res.status(500).send({
       status: false,
       message: "Error fetching data",
       error: err.message,
-    })
+    });
   }
-}
+};
 
 const create = async (req, res) => {
   try {
-    const { error, value } = createSchema.validate(req?.body)
+    const { error, value } = createSchema.validate(req?.body);
     if (error) {
       return res.status(400).send({
         status: false,
         message: error.details[0].message,
-      })
+      });
     }
 
-    const expense = new expenseEntity(value)
-    const insertedId = await model.create(expense)
+    const expense = new ExpenseEntity(value);
+    const insertedId = await model.create(expense);
     if (insertedId) {
       res.send({
         status: true,
         message: "Expense created successfully",
         insertedId,
-      })
+      });
     } else {
       res.status(400).send({
         status: false,
         message: "Error creating data",
-      })
+      });
     }
   } catch (error) {
     res.status(500).send({
       status: false,
       message: "Error creating data",
       error: error.message,
-    })
+    });
   }
-}
+};
 
 const update = async (req, res) => {
   try {
-    const { error, value } = updateSchema.validate(req?.body)
+    const { error, value } = updateSchema.validate(req?.body);
     if (error) {
       return res.status(400).send({
         status: false,
         message: error.details[0].message,
-      })
+      });
     }
 
-    const isUpdated = await model.update(value)
+    const isUpdated = await model.update(value);
     if (isUpdated) {
       res.send({
         status: true,
         message: "Expense updated successfully",
-      })
+      });
     } else {
       res.status(404).send({
         status: false,
         message: "Failed to update expense. Data not found.",
-      })
+      });
     }
   } catch (error) {
     res.status(500).send({
       status: false,
       message: "Error updating data",
       error: error.message,
-    })
+    });
   }
-}
+};
 
 const deleteExpense = async (req, res) => {
   try {
-    const { error, value } = idSchema.validate(req?.params)
+    const { error, value } = idSchema.validate(req?.params);
     if (error) {
       return res.status(400).send({
         status: false,
         message: error.details[0].message,
-      })
+      });
     }
-    const isDeleted = await model.deleteExpense(value?.id)
+    const isDeleted = await model.deleteExpense(value?.id);
     if (isDeleted) {
       res.send({
         status: true,
         message: "Expense deleted successfully",
-      })
+      });
     } else {
       res.status(404).send({
         status: false,
         message: "Failed to delete expense. Data not found.",
-      })
+      });
     }
   } catch (error) {
     res.status(500).send({
       status: false,
       message: "Error deleting data",
       error: error.message,
-    })
+    });
   }
-}
+};
 
 module.exports = {
   getAll,
@@ -215,4 +215,4 @@ module.exports = {
   create,
   update,
   deleteExpense,
-}
+};

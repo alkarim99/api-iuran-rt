@@ -253,6 +253,20 @@ const create = async (req, res) => {
     }
     let data = value;
 
+    if (data.details_payment) {
+      const sum =
+        data.details_payment.rt +
+        data.details_payment.pkk +
+        data.details_payment.sosial +
+        data.details_payment.kematian;
+      if (sum !== data.nominal) {
+        return res.status(400).send({
+          status: false,
+          message: `Total rincian (${sum}) tidak sama dengan nominal (${data.nominal}).`,
+        });
+      }
+    }
+
     // check existing payment (off dulu)
     // const existingPayment = await model.getByWargaAndPeriod(
     //   data.warga_id,
@@ -308,6 +322,20 @@ const update = async (req, res) => {
       });
     }
     let data = value;
+
+    if (data.details_payment) {
+      const sum =
+        data.details_payment.rt +
+        data.details_payment.pkk +
+        data.details_payment.sosial +
+        data.details_payment.kematian;
+      if (sum !== data.nominal) {
+        return res.status(400).send({
+          status: false,
+          message: `Total rincian (${sum}) tidak sama dengan nominal (${data.nominal}).`,
+        });
+      }
+    }
 
     const dataWarga = await collWarga.findOne({
       _id: new ObjectId(data?.warga_id),

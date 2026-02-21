@@ -51,7 +51,12 @@ const getNumberOfPeriods = (data) => {
 const getDetailsPayment = (data) => {
   let dataDetails = {};
 
-  if (data?.nominal % 75000 === 0) {
+  if (data?.details_payment) {
+    dataDetails.rt = data.details_payment.rt;
+    dataDetails.pkk = data.details_payment.pkk;
+    dataDetails.sosial = data.details_payment.sosial;
+    dataDetails.kematian = data.details_payment.kematian;
+  } else if (data?.nominal % 75000 === 0) {
     dataDetails.rt = 75000 * data?.number_of_period;
     dataDetails.pkk = 0;
     dataDetails.sosial = 0;

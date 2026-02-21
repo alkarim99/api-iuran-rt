@@ -4,6 +4,13 @@ const idSchema = Joi.object({
   id: Joi.string().required(),
 });
 
+const detailsPaymentSchema = Joi.object({
+  rt: Joi.number().required(),
+  pkk: Joi.number().required(),
+  sosial: Joi.number().required(),
+  kematian: Joi.number().required(),
+});
+
 const createSchema = Joi.object({
   warga_id: Joi.string().required(),
   period_start: Joi.date().required(),
@@ -11,6 +18,7 @@ const createSchema = Joi.object({
   nominal: Joi.number().required(),
   payment_method: Joi.string().valid("cash", "transfer").required(),
   pay_at: Joi.date().required(),
+  details_payment: detailsPaymentSchema.optional(),
 });
 
 const updateSchema = Joi.object({
@@ -21,6 +29,7 @@ const updateSchema = Joi.object({
   nominal: Joi.number().required(),
   payment_method: Joi.string().valid("cash", "transfer").required(),
   pay_at: Joi.date().required(),
+  details_payment: detailsPaymentSchema.optional(),
 });
 
 const filterSchema = Joi.object({
@@ -53,4 +62,10 @@ const reportRangeSchema = Joi.object({
     }),
 });
 
-module.exports = { idSchema, createSchema, updateSchema, filterSchema, reportRangeSchema };
+module.exports = {
+  idSchema,
+  createSchema,
+  updateSchema,
+  filterSchema,
+  reportRangeSchema,
+};

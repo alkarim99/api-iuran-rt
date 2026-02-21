@@ -360,19 +360,19 @@ flowchart TD
 
 ### Payments
 
-| Method | Endpoint               | Deskripsi                  |
-| ------ | ---------------------- | -------------------------- |
-| GET    | `/payments`            | List paginated + search    |
-| GET    | `/payments/:id`        | Detail by ID               |
-| GET    | `/payments/warga/:id`  | Semua payment milik warga  |
-| GET    | `/payments/latest/:id` | Period terakhir warga      |
-| GET    | `/payments/report/:id` | Report bulanan per warga   |
-| GET    | `/payments/rincian`    | Filter by pay_at month     |
-| GET    | `/payments/total`      | Total income by date range |
-| GET    | `/payments/method`     | Filter by method + month   |
-| POST   | `/payments`            | Create payment             |
-| PUT    | `/payments`            | Update payment             |
-| DELETE | `/payments/:id`        | Hard delete                |
+| Method | Endpoint               | Deskripsi                                                  |
+| ------ | ---------------------- | ---------------------------------------------------------- |
+| GET    | `/payments`            | List paginated + search                                    |
+| GET    | `/payments/:id`        | Detail by ID                                               |
+| GET    | `/payments/warga/:id`  | Semua payment milik warga                                  |
+| GET    | `/payments/latest/:id` | Period terakhir warga                                      |
+| GET    | `/payments/report/:id` | Report bulanan per warga                                   |
+| GET    | `/payments/rincian`    | Filter by pay_at month                                     |
+| GET    | `/payments/total`      | Total income by date range                                 |
+| GET    | `/payments/method`     | Filter by method + month                                   |
+| POST   | `/payments`            | Create payment (accepts optional details_payment override) |
+| PUT    | `/payments`            | Update payment (accepts optional details_payment override) |
+| DELETE | `/payments/:id`        | Hard delete                                                |
 
 ### Expense
 
@@ -420,14 +420,14 @@ flowchart TD
 
 ### 6.2 Pattern yang Bagus
 
-| #   | Area                 | Catatan                                                                                                                           |
-| --- | -------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | **Warga Sync**       | Fire-and-forget pattern untuk sinkronisasi data warga ke payment records — tidak blocking response user                           |
-| 2   | **Address Sorting**  | MongoDB aggregation pipeline yang memecah address menjadi prefix, number, dan suffix untuk natural sorting                        |
-| 3   | **DTO Validation**   | Penggunaan Joi schema untuk validasi input yang konsisten di semua endpoint                                                       |
-| 4   | **Custom Hooks**     | Frontend menggunakan custom hooks (`usePayments`, `useCreatePayments`, `useEditPayments`, `useUsers`) untuk separation of concern |
-| 5   | **Security Headers** | Penggunaan Helmet.js dan XSS-Clean middleware                                                                                     |
-| 6   | **Latest Period**    | UX yang baik — saat create pembayaran, auto-fetch periode terakhir warga sebagai referensi                                        |
+| #   | Area                 | Catatan                                                                                                                                                                                                                                                                        |
+| --- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | **Warga Sync**       | Fire-and-forget pattern untuk sinkronisasi data warga ke payment records — tidak blocking response user                                                                                                                                                                        |
+| 2   | **Address Sorting**  | MongoDB aggregation pipeline yang memecah address menjadi prefix, number, dan suffix untuk natural sorting                                                                                                                                                                     |
+| 3   | **DTO Validation**   | Penggunaan Joi schema untuk validasi input yang konsisten di semua endpoint                                                                                                                                                                                                    |
+| 4   | **Custom Hooks**     | Frontend menggunakan custom hooks (`usePayments`, `useCreatePayments`, `useEditPayments`, `useUsers`, `useTableState`) untuk separation of concern. `useTableState` secara inovatif mem-_persist_ parameter query pencarian (_Page, limit, sort_) langsung ke Session Storage. |
+| 5   | **Security Headers** | Penggunaan Helmet.js dan XSS-Clean middleware                                                                                                                                                                                                                                  |
+| 6   | **Latest Period**    | UX yang baik — saat create pembayaran, auto-fetch periode terakhir warga sebagai referensi                                                                                                                                                                                     |
 
 ---
 

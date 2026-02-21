@@ -15,7 +15,7 @@ Backend API untuk aplikasi pencatatan iuran warga RT.
 
 - 🔐 **Autentikasi** — Login/Register dengan JWT
 - 👥 **Manajemen Warga** — CRUD data warga dengan validasi alamat unik
-- 💰 **Pencatatan Iuran** — Catat pembayaran dengan kalkulasi otomatis (2-tier pricing)
+- 💰 **Pencatatan Iuran** — Catat pembayaran dengan kalkulasi otomatis (2-tier pricing) dan mode manual override _custom validation_
 - 📤 **Pencatatan Pengeluaran** — CRUD pengeluaran kas RT
 - 📊 **Laporan** — Laporan pemasukan per metode pembayaran (cash/transfer) dan total pendapatan
 - 👤 **Manajemen User** — CRUD pengguna aplikasi

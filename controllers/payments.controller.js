@@ -8,6 +8,7 @@ const {
   createSchema,
   updateSchema,
   filterSchema,
+  reportRangeSchema,
 } = require("../dto/payments/request");
 const {
   getAllMonthsBetween,
@@ -370,6 +371,37 @@ const deletePayment = async (req, res) => {
   }
 };
 
+const getMonthlyReportByPricingTier = async (req, res) => {
+  try {
+    const { error, value } = reportRangeSchema.validate(req?.query);
+    if (error) {
+      return res.status(400).send({
+        status: false,
+        message: error.details[0].message,
+      });
+    }
+
+    const { start_date, end_date } = value;
+    const data = await model.getMonthlyReportByPricingTier(
+      start_date,
+      end_date,
+    );
+
+    res.send({
+      status: true,
+      message: "Get report success",
+      ...data,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send({
+      status: false,
+      message: "Error generating report",
+      error: err.message,
+    });
+  }
+};
+
 module.exports = {
   getAll,
   getByPayAt,
@@ -382,4 +414,5 @@ module.exports = {
   create,
   update,
   deletePayment,
+  getMonthlyReportByPricingTier,
 };

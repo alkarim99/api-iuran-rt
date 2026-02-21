@@ -124,6 +124,7 @@ const getByPayAt = async (
   lastDay,
   keyword,
   sort_by,
+  order = -1,
   page = 1,
   limit = 20,
 ) => {
@@ -145,7 +146,7 @@ const getByPayAt = async (
 
     let sort = {};
     if (sort_by) {
-      sort[sort_by] = sort_by === "asc" ? 1 : -1;
+      sort[sort_by] = parseInt(order) === 1 ? 1 : -1;
       options.sort = sort;
     }
 

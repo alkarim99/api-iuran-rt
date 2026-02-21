@@ -57,7 +57,7 @@ const getByPayAt = async (req, res) => {
       });
     }
 
-    const { keyword, sort_by, page, limit, pay_at } = value;
+    const { keyword, sort_by, order, page, limit, pay_at } = value;
     const payAt = new Date(pay_at);
     const firstDay = new Date(payAt.getFullYear(), payAt.getMonth(), 1);
     const lastDay = new Date(payAt.getFullYear(), payAt.getMonth() + 1, 0);
@@ -66,6 +66,7 @@ const getByPayAt = async (req, res) => {
       lastDay,
       keyword,
       sort_by,
+      order,
       page,
       limit,
     );

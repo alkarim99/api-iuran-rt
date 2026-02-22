@@ -9,7 +9,7 @@ Aplikasi **Iuran RT** adalah sistem pencatatan pembayaran iuran warga RT. Aplika
 | **Backend**  | `api-iuran-rt`  | Express.js, MongoDB, JWT, Joi, bcrypt                            |
 | **Frontend** | `iuran-rt-apps` | React 18, Bootstrap 5, Redux + redux-persist, Axios, SweetAlert2 |
 
-Deployment backend menggunakan **Vercel** (ada `vercel.json`). Database menggunakan **MongoDB** dengan 3 database terpisah (payment, user, warga) masing-masing memiliki collection tersendiri, di-switch berdasarkan environment (`development` / `local` / production).
+Deployment backend menggunakan **Vercel** (ada `vercel.json`). Database menggunakan **MongoDB** dengan 3 database terpisah (payment, user, warga) masing-masing memiliki collection tersendiri, di-switch berdasarkan environment (`development` / `local` / `production`).
 
 ---
 
@@ -220,6 +220,7 @@ getDetailsPayment():
 > - Misal tagihan 7 bulan berikutnya: Rp 770.000 − Rp 50.000 = **Rp 720.000**
 >
 > **Skenario ini belum diakomodir oleh aplikasi saat ini.** Rencana ke depan: membuat **master tier pricing** yang ditempelkan per warga, sehingga sistem bisa menghitung kelebihan/kekurangan bayar secara otomatis. Ditunda karena banyak variasi custom case.
+> Untuk saat ini, jika ada kelebihan bayar, bendahara harus mencatatnya secara manual rincian iuran (sudah disediakan manual input untuk rincian iuran).
 
 #### 3.3.3 Field Payment
 

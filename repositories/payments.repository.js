@@ -24,14 +24,19 @@ const getAll = async (
     }
 
     let sortStage = {};
-    sortStage = {
-      addressPrefix: order,
-      addressNumber: order,
-      addressSuffix: order,
-    };
-    if (sort_by) {
-      sortStage[sort_by] = order;
+    if (sort_by === "address") {
+      sortStage = {
+        addressPrefix: order,
+        addressNumber: order,
+        addressSuffix: order,
+      };
+    } else if (sort_by) {
+      sortStage = {
+        [sort_by]: order,
+      };
     }
+
+    console.log(sortStage);
 
     const pipeline = [
       { $match: query },

@@ -29,6 +29,7 @@ const buildReport = async (req, res, paymentMethodFilter = null) => {
         paymentMethodFilter,
       );
       paymentData = paymentData.data;
+      console.log(paymentData);
     } else {
       // If no filter, fetch all within range. Reusing getByPayAt logic
       const payments = await paymentRepo.getByPayAt(
@@ -54,8 +55,9 @@ const buildReport = async (req, res, paymentMethodFilter = null) => {
     );
     otherIncomeData = otherIncomeData.data;
     if (paymentMethodFilter) {
+      const filterLower = paymentMethodFilter.toLowerCase();
       otherIncomeData = otherIncomeData.filter(
-        (item) => item.payment_method === paymentMethodFilter,
+        (item) => (item.payment_method || "").toLowerCase() === filterLower,
       );
     }
 
@@ -70,9 +72,9 @@ const buildReport = async (req, res, paymentMethodFilter = null) => {
     );
     expenseData = expenseData.data;
     if (paymentMethodFilter) {
-      console.log(paymentMethodFilter.toLowerCase());
+      const filterLower = paymentMethodFilter.toLowerCase();
       expenseData = expenseData.filter(
-        (item) => item.payment_method === paymentMethodFilter,
+        (item) => (item.payment_method || "").toLowerCase() === filterLower,
       );
     }
 
@@ -142,11 +144,11 @@ const buildReport = async (req, res, paymentMethodFilter = null) => {
 };
 
 const getPettyCashReport = async (req, res) => {
-  return await buildReport(req, res, "Cash");
+  return await buildReport(req, res, "cash");
 };
 
 const getKasRekeningReport = async (req, res) => {
-  return await buildReport(req, res, "Transfer");
+  return await buildReport(req, res, "transfer");
 };
 
 const getNeracaKasReport = async (req, res) => {

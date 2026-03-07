@@ -16,7 +16,7 @@ const migrateExpenses = async (req, res) => {
     const migratedExpenses = oldExpenses.map((expense) => {
       return {
         ...expense,
-        payment_method: expense.payment_method || "Cash", // Default to Cash if not present
+        payment_method: expense.payment_method || "cash", // Default to Cash if not present
       };
     });
 

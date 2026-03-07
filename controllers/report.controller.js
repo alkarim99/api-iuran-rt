@@ -264,8 +264,86 @@ const getNeracaKasReport = async (req, res) => {
   }
 };
 
+const getDashboardSummary = async (req, res) => {
+  try {
+    const { start_date, end_date } = req.query;
+
+    if (!start_date || !end_date) {
+      return res.status(400).send({
+        status: false,
+        message: "start_date and end_date are required",
+      });
+    }
+
+    const start = new Date(start_date);
+    const end = new Date(end_date);
+    end.setHours(23, 59, 59, 999);
+
+    const payments = await paymentRepo.getByPayAt(
+      start,
+      end,
+      "",
+      "pay_at",
+      1,
+      1,
+      100000,
+    );
+    const otherIncomes = await otherIncomeRepo.getByTransactionAt(
+      start,
+      end,
+      "",
+      "transaction_at",
+      1,
+      100000,
+    );
+    const expenses = await expenseRepo.getByTransactionAt(
+      start,
+      end,
+      "",
+      "transaction_at",
+      1,
+      100000,
+    );
+
+    let totalLainnya = 0;
+    otherIncomes.data.forEach((oi) => {
+      totalLainnya += parseFloat(oi.nominal);
+    });
+
+    let totalExpense = 0;
+    expenses.data.forEach((e) => {
+      totalExpense += parseFloat(e.nominal);
+    });
+
+    let totalIuran = 0;
+    payments.data.forEach((p) => {
+      totalIuran += parseFloat(p.nominal);
+    });
+
+    const totalIncome = Number((totalIuran + totalLainnya).toFixed(2));
+    totalExpense = Number(totalExpense.toFixed(2));
+    const netBalance = Number((totalIncome - totalExpense).toFixed(2));
+
+    res.send({
+      status: true,
+      data: {
+        total_income: totalIncome,
+        total_expense: totalExpense,
+        net_balance: netBalance,
+      },
+    });
+  } catch (err) {
+    res.status(500).send({
+      status: false,
+      message: "Error generating dashboard summary",
+      error: err.message,
+    });
+  }
+};
+
 module.exports = {
   getPettyCashReport,
   getKasRekeningReport,
   getNeracaKasReport,
+  getDashboardSummary,
 };

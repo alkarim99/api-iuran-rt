@@ -24,6 +24,7 @@ const getAll = async (req, res) => {
       value?.order,
       value?.page,
       value?.limit,
+      value?.payAt,
     );
     res.send({
       status: true,

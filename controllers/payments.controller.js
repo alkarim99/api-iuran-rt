@@ -174,8 +174,23 @@ const getByWargaID = async (req, res) => {
 
 const getTotalIncome = async (req, res) => {
   try {
-    const { start, end, sort_by, page, limit } = req?.query;
-    const data = await model.getTotalIncome(start, end, sort_by, page, limit);
+    const { pay_at, sort_by, order, page, limit } = req?.query;
+
+    let firstDay, lastDay;
+    if (pay_at) {
+      const payAt = new Date(pay_at);
+      firstDay = new Date(payAt.getFullYear(), payAt.getMonth(), 1);
+      lastDay = new Date(payAt.getFullYear(), payAt.getMonth() + 1, 0);
+    }
+
+    const data = await model.getTotalIncome(
+      firstDay,
+      lastDay,
+      sort_by,
+      order,
+      page,
+      limit,
+    );
     res.send({
       status: true,
       message: "Get data success",

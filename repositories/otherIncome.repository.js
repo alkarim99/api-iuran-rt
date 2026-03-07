@@ -7,6 +7,7 @@ const getAll = async (
   order = 1,
   page = 1,
   limit = 20,
+  payAt = null,
 ) => {
   try {
     let query = {};
@@ -20,6 +21,16 @@ const getAll = async (
       query["$or"] = [{ description: keywordRegex }];
     }
 
+    if (payAt) {
+      const [year, month] = payAt.split("-");
+      const lastDay = new Date(year, month, 0).getDate();
+      const firstDay = new Date(`${payAt}-01T00:00:00.000Z`);
+      const endDate = new Date(
+        `${payAt}-${String(lastDay).padStart(2, "0")}T23:59:59.999Z`,
+      );
+      query["transaction_at"] = { $gte: firstDay, $lte: endDate };
+    }
+
     let sort = {};
     if (sort_by) {
       sort[sort_by] = order === -1 ? -1 : 1;
@@ -31,12 +42,23 @@ const getAll = async (
 
     const data = await collOtherIncome.find(query, options).toArray();
     const totalItems = await collOtherIncome.countDocuments(query);
+
+    // Aggregation to sum nominal matching the query
+    const sumResult = await collOtherIncome
+      .aggregate([
+        { $match: query },
+        { $group: { _id: null, totalNominal: { $sum: "$nominal" } } },
+      ])
+      .toArray();
+    const totalNominal = sumResult.length > 0 ? sumResult[0].totalNominal : 0;
+
     const totalPages = Math.ceil(totalItems / limit);
 
     const response = {
       currentPage: parseInt(page),
       totalPages: totalPages,
       totalCount: totalItems,
+      totalNominal: totalNominal,
       perPage: parseInt(limit),
       data: data,
     };

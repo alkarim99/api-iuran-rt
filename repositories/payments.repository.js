@@ -278,11 +278,19 @@ const getByWargaID = async (id, sort_by) => {
   }
 };
 
-const getTotalIncome = async (start, end, sort_by, page = 1, limit = 20) => {
+const getTotalIncome = async (
+  start,
+  end,
+  sort_by,
+  orderNum,
+  page = 1,
+  limit = 20,
+) => {
   try {
-    let query = {
-      pay_at: { $gte: new Date(start), $lte: new Date(end) },
-    };
+    let query = {};
+    if (start && end) {
+      query.pay_at = { $gte: new Date(start), $lte: new Date(end) };
+    }
 
     page = parseInt(page) || 1;
     limit = parseInt(limit) || 20;
@@ -303,10 +311,9 @@ const getTotalIncome = async (start, end, sort_by, page = 1, limit = 20) => {
 
     // 2. Determine Sorting Direction Strategy
     let sortStage = {};
-    // Let text default to ASC (1), dates default to DESC (-1)
-    let order = 1;
-    if (!sort_by) sort_by = "pay_at";
-    if (sort_by === "pay_at" || sort_by === "created_at") {
+    let order = parseInt(orderNum) || 1;
+    if (!sort_by) {
+      sort_by = "pay_at";
       order = -1;
     }
 

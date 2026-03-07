@@ -1,5 +1,5 @@
 const { ObjectId } = require("mongodb");
-const { collExpenseV2 } = require("../config/database");
+const { collOtherIncome } = require("../config/database");
 
 const getAll = async (
   keyword,
@@ -29,8 +29,8 @@ const getAll = async (
       options.sort = sort;
     }
 
-    const data = await collExpenseV2.find(query, options).toArray();
-    const totalItems = await collExpenseV2.countDocuments(query);
+    const data = await collOtherIncome.find(query, options).toArray();
+    const totalItems = await collOtherIncome.countDocuments(query);
     const totalPages = Math.ceil(totalItems / limit);
 
     const response = {
@@ -50,7 +50,7 @@ const getAll = async (
 
 const getByID = async (id) => {
   try {
-    const data = await collExpenseV2.findOne({ _id: new ObjectId(id) });
+    const data = await collOtherIncome.findOne({ _id: new ObjectId(id) });
     return data;
   } catch (err) {
     console.error("Error connecting to MongoDB:", err);
@@ -80,8 +80,8 @@ const getByTransactionAt = async (
     sort["transaction_at"] = 1;
     options.sort = sort;
 
-    const data = await collExpenseV2.find(query, options).toArray();
-    const totalItems = await collExpenseV2.countDocuments(query);
+    const data = await collOtherIncome.find(query, options).toArray();
+    const totalItems = await collOtherIncome.countDocuments(query);
     const totalPages = Math.ceil(totalItems / limit);
 
     const response = {
@@ -101,10 +101,10 @@ const getByTransactionAt = async (
 
 const create = async (data) => {
   try {
-    const result = await collExpenseV2.insertOne(data);
+    const result = await collOtherIncome.insertOne(data);
     return result.insertedId;
   } catch (err) {
-    console.error("Error creating expense:", err);
+    console.error("Error creating other income:", err);
     throw err;
   }
 };
@@ -116,26 +116,27 @@ const update = async (data) => {
         description: data?.description,
         nominal: data?.nominal,
         transaction_at: new Date(data?.transaction_at),
+        payment_method: data?.payment_method,
         updated_at: new Date(),
       },
     };
-    const result = await collExpenseV2.updateOne(
+    const result = await collOtherIncome.updateOne(
       { _id: new ObjectId(data?.id) },
       updateData,
     );
     return result.modifiedCount > 0;
   } catch (err) {
-    console.error("Error updating expense:", err);
+    console.error("Error updating other income:", err);
     throw err;
   }
 };
 
-const deleteExpense = async (id) => {
+const deleteOtherIncome = async (id) => {
   try {
-    const result = await collExpenseV2.deleteOne({ _id: new ObjectId(id) });
-    return result.deletedCount > 0; // Return true if a document was deleted
+    const result = await collOtherIncome.deleteOne({ _id: new ObjectId(id) });
+    return result.deletedCount > 0;
   } catch (err) {
-    console.error("Error deleting expense:", err);
+    console.error("Error deleting other income:", err);
     throw err;
   }
 };
@@ -146,5 +147,5 @@ module.exports = {
   getByTransactionAt,
   create,
   update,
-  deleteExpense,
+  deleteOtherIncome,
 };

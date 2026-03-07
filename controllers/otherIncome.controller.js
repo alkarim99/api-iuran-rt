@@ -1,12 +1,12 @@
-const model = require("../repositories/expense.repository");
+const model = require("../repositories/otherIncome.repository");
 const { createLog } = require("../helpers/audit.helper");
 const {
   idSchema,
   createSchema,
   updateSchema,
   filterSchema,
-} = require("../dto/expense/request");
-const { ExpenseEntity } = require("../entities/expense.entity");
+} = require("../dto/otherIncome/request");
+const { OtherIncomeEntity } = require("../entities/otherIncome.entity");
 
 const getAll = async (req, res) => {
   try {
@@ -76,6 +76,7 @@ const getByTransactionAt = async (req, res) => {
 
     const { transaction_at, keyword, sort_by, order, page, limit } = value;
     const transactionAt = new Date(transaction_at);
+    // Determine the month bounds
     const firstDay = new Date(
       transactionAt.getFullYear(),
       transactionAt.getMonth(),
@@ -125,20 +126,20 @@ const create = async (req, res) => {
       });
     }
 
-    const expense = new ExpenseEntity(value);
-    const insertedId = await model.create(expense);
+    const otherIncome = new OtherIncomeEntity(value);
+    const insertedId = await model.create(otherIncome);
     if (insertedId) {
       await createLog(
         req,
         "CREATE",
-        "PENGELUARAN",
-        `Mencatat Pengeluaran sebesar Rp${value.nominal}`,
+        "PEMASUKAN_LAINNYA",
+        `Mencatat Pemasukan Lainnya sebesar Rp${value.nominal}`,
         null,
         value,
       );
       res.send({
         status: true,
-        message: "Expense created successfully",
+        message: "Other income created successfully",
         insertedId,
       });
     } else {
@@ -172,19 +173,19 @@ const update = async (req, res) => {
       await createLog(
         req,
         "UPDATE",
-        "PENGELUARAN",
-        `Mengubah data Pengeluaran ID ${value.id}`,
+        "PEMASUKAN_LAINNYA",
+        `Mengubah data Pemasukan Lainnya ID ${value.id}`,
         oldData,
         value,
       );
       res.send({
         status: true,
-        message: "Expense updated successfully",
+        message: "Other income updated successfully",
       });
     } else {
       res.status(404).send({
         status: false,
-        message: "Failed to update expense. Data not found.",
+        message: "Failed to update. Data not found.",
       });
     }
   } catch (error) {
@@ -196,7 +197,7 @@ const update = async (req, res) => {
   }
 };
 
-const deleteExpense = async (req, res) => {
+const deleteOtherIncome = async (req, res) => {
   try {
     const { error, value } = idSchema.validate(req?.params);
     if (error) {
@@ -206,24 +207,24 @@ const deleteExpense = async (req, res) => {
       });
     }
     const oldData = await model.getByID(value.id);
-    const isDeleted = await model.deleteExpense(value?.id);
+    const isDeleted = await model.deleteOtherIncome(value?.id);
     if (isDeleted) {
       await createLog(
         req,
         "DELETE",
-        "PENGELUARAN",
-        `Menghapus Pengeluaran ID ${value.id}`,
+        "PEMASUKAN_LAINNYA",
+        `Menghapus Pemasukan Lainnya ID ${value.id}`,
         oldData,
         null,
       );
       res.send({
         status: true,
-        message: "Expense deleted successfully",
+        message: "Other income deleted successfully",
       });
     } else {
       res.status(404).send({
         status: false,
-        message: "Failed to delete expense. Data not found.",
+        message: "Failed to delete. Data not found.",
       });
     }
   } catch (error) {
@@ -241,5 +242,5 @@ module.exports = {
   getByTransactionAt,
   create,
   update,
-  deleteExpense,
+  deleteOtherIncome,
 };

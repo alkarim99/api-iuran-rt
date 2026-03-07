@@ -2,6 +2,7 @@ const bcrypt = require("bcrypt");
 const saltRounds = 10;
 const { idSchema, updateSchema } = require("../dto/users/request");
 const usersRepository = require("../repositories/users.repository");
+const { createLog } = require("../helpers/audit.helper");
 const { UsersResponse } = require("../dto/users/response");
 
 const getAll = async (req, res) => {
@@ -90,9 +91,20 @@ const update = async (req, res) => {
       payload.password = await bcrypt.hash(value.password, salt);
     }
 
+    const oldData = await usersRepository.getByID(value.id);
     const isUpdated = await usersRepository.update(payload);
 
     const responseData = new UsersResponse(value);
+
+    await createLog(
+      req,
+      "UPDATE",
+      "USER",
+      `Mengubah profil User ID ${value.id}`,
+      oldData,
+      payload,
+      "user",
+    );
     res.send({
       status: true,
       message: "User updated successfully",
@@ -117,8 +129,18 @@ const deleteUser = async (req, res) => {
       });
     }
 
+    const oldData = await usersRepository.getByID(value.id);
     const isDeleted = await usersRepository.deleteUser(value?.id);
     if (isDeleted) {
+      await createLog(
+        req,
+        "DELETE",
+        "USER",
+        `Menghapus User ID ${value.id}`,
+        oldData,
+        null,
+        "user",
+      );
       res.send({
         status: true,
         message: "User deleted successfully",

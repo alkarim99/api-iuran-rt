@@ -4,6 +4,8 @@
   "description": "Backend for RT Dues Record App",
   "main": "index.js",
   "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
     "test": "jest --verbose --forceExit --detectOpenHandles"
   },
   "author": "Abdullah Al-Karim",

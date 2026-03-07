@@ -1,5 +1,6 @@
 const { ObjectId } = require("mongodb");
 const model = require("../repositories/payments.repository");
+const { createLog } = require("../helpers/audit.helper");
 const { collWarga } = require("../config/database");
 const { PaymentEntity } = require("../entities/payment.entity");
 const { WargaDataEmbed } = require("../entities/warga.entity");
@@ -292,6 +293,14 @@ const create = async (req, res) => {
     const payment = new PaymentEntity(data);
     const insertedId = await model.create(payment);
     if (insertedId) {
+      await createLog(
+        req,
+        "CREATE",
+        "IURAN",
+        `Mencatat Iuran sebesar Rp${data.nominal}`,
+        null,
+        data,
+      );
       res.send({
         status: true,
         message: "Payment created successfully",
@@ -346,8 +355,17 @@ const update = async (req, res) => {
     data = getNumberOfPeriods(data);
     data = getDetailsPayment(data);
 
+    const oldData = await model.getByID(data.id);
     const isUpdated = await model.update(data);
     if (isUpdated) {
+      await createLog(
+        req,
+        "UPDATE",
+        "IURAN",
+        `Mengubah data Iuran ID ${data.id}`,
+        oldData,
+        data,
+      );
       res.send({
         status: true,
         message: "Payment updated successfully",
@@ -378,8 +396,17 @@ const deletePayment = async (req, res) => {
       });
     }
     const { id } = value;
+    const oldData = await model.getByID(id);
     const isDeleted = await model.deletePayment(id);
     if (isDeleted) {
+      await createLog(
+        req,
+        "DELETE",
+        "IURAN",
+        `Menghapus data Iuran ID ${id}`,
+        oldData,
+        null,
+      );
       res.send({
         status: true,
         message: "Payment deleted successfully",

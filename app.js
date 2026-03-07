@@ -3,11 +3,14 @@ const express = require("express");
 const app = express();
 const bodyParser = require("body-parser");
 
-const wargasRoutes = require("./routes/wargas.route");
-const paymentsRoutes = require("./routes/payments.route");
-const usersRoutes = require("./routes/users.route");
-const authRoutes = require("./routes/auth.route");
-const expenseRoutes = require("./routes/expense.route");
+const userRouter = require("./routes/users.route");
+const authRouter = require("./routes/auth.route");
+const wargaRouter = require("./routes/wargas.route");
+const paymentRouter = require("./routes/payments.route");
+const expenseRouter = require("./routes/expense.route");
+const migrationRouter = require("./routes/migration.route");
+const otherIncomeRouter = require("./routes/otherIncome.route");
+const reportRouter = require("./routes/report.route");
 const invalidRoutes = require("./routes/404.route");
 
 const helmet = require("helmet");
@@ -26,11 +29,14 @@ app.use(xss());
 app.use(cors());
 
 // Routes
-app.use(wargasRoutes);
-app.use(paymentsRoutes);
-app.use(usersRoutes);
-app.use(authRoutes);
-app.use(expenseRoutes);
+app.use("/api", authRouter);
+app.use("/api", wargaRouter);
+app.use("/api", paymentRouter);
+app.use("/api", expenseRouter);
+app.use("/api", migrationRouter);
+app.use("/api", otherIncomeRouter);
+app.use("/api", reportRouter);
+app.use("/api", userRouter);
 
 // Home
 app.get("/", (req, res) => {

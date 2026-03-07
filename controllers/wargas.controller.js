@@ -1,4 +1,5 @@
 const model = require("../repositories/wargas.repository");
+const { createLog } = require("../helpers/audit.helper");
 const {
   idSchema,
   createSchema,
@@ -123,6 +124,15 @@ const create = async (req, res) => {
     const insertedId = await model.create(warga);
 
     if (insertedId) {
+      await createLog(
+        req,
+        "CREATE",
+        "WARGA",
+        `Menambah data Warga: ${data.name}`,
+        null,
+        data,
+        "warga",
+      );
       res.send({
         status: true,
         message: "Warga created successfully",
@@ -164,11 +174,21 @@ const update = async (req, res) => {
       });
     }
 
+    const oldData = await model.getByID(data.id);
     const isUpdated = await model.update(data);
     if (isUpdated) {
       // Sync payment records asynchronously (Fire and Forget)
       syncWargaToPayments(data.id, { name: data.name, address: data.address });
 
+      await createLog(
+        req,
+        "UPDATE",
+        "WARGA",
+        `Mengubah data Warga ID ${data.id}`,
+        oldData,
+        data,
+        "warga",
+      );
       res.send({
         status: true,
         message: "Warga updated successfully",
@@ -200,8 +220,18 @@ const deleteWarga = async (req, res) => {
       });
     }
 
+    const oldData = await model.getByID(value.id);
     const isDeleted = await model.deleteWarga(value?.id);
     if (isDeleted) {
+      await createLog(
+        req,
+        "DELETE",
+        "WARGA",
+        `Menghapus Warga ID ${value.id}`,
+        oldData,
+        null,
+        "warga",
+      );
       res.send({
         status: true,
         message: "Warga deleted successfully",

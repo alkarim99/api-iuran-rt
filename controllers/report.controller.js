@@ -29,7 +29,6 @@ const buildReport = async (req, res, paymentMethodFilter = null) => {
         paymentMethodFilter,
       );
       paymentData = paymentData.data;
-      console.log(paymentData);
     } else {
       // If no filter, fetch all within range. Reusing getByPayAt logic
       const payments = await paymentRepo.getByPayAt(

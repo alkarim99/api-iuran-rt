@@ -36,8 +36,6 @@ const getAll = async (
       };
     }
 
-    // console.log(sortStage);
-
     const pipeline = [
       { $match: query },
       {

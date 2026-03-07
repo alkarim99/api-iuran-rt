@@ -283,35 +283,129 @@ const getTotalIncome = async (start, end, sort_by, page = 1, limit = 20) => {
     let query = {
       pay_at: { $gte: new Date(start), $lte: new Date(end) },
     };
-    let options = {
-      skip: (parseInt(page) - 1) * parseInt(limit),
-      limit: parseInt(limit),
-    };
 
-    let sort = {};
-    if (sort_by) {
-      sort[sort_by] = sort_by === "asc" ? 1 : -1;
-      options.sort = sort;
+    page = parseInt(page) || 1;
+    limit = parseInt(limit) || 20;
+
+    // 1. Calculate overall total income independent of pagination
+    const incomeAgg = await collPayment
+      .aggregate([
+        { $match: query },
+        {
+          $group: {
+            _id: null,
+            total: { $sum: "$nominal" },
+          },
+        },
+      ])
+      .toArray();
+    const totalIncome = incomeAgg.length > 0 ? incomeAgg[0].total : 0;
+
+    // 2. Determine Sorting Direction Strategy
+    let sortStage = {};
+    // Let text default to ASC (1), dates default to DESC (-1)
+    let order = 1;
+    if (!sort_by) sort_by = "pay_at";
+    if (sort_by === "pay_at" || sort_by === "created_at") {
+      order = -1;
     }
 
-    const data = await collPayment.find(query, options).toArray();
+    const isAddressSort = sort_by === "address" || sort_by === "warga.address";
+    if (isAddressSort) {
+      sortStage = {
+        addressPrefix: order,
+        addressNumber: order,
+        addressSuffix: order,
+      };
+    } else if (sort_by) {
+      sortStage = {
+        [sort_by]: order,
+      };
+    }
+
+    // 3. Build aggregation pipeline for data with alphanumeric address sorting
+    const pipeline = [{ $match: query }];
+
+    if (isAddressSort) {
+      pipeline.push(
+        {
+          $addFields: {
+            addressPrefix: {
+              $arrayElemAt: [{ $split: ["$warga.address", "-"] }, 0],
+            },
+            _addressSecond: {
+              $arrayElemAt: [{ $split: ["$warga.address", "-"] }, 1],
+            },
+          },
+        },
+        {
+          $addFields: {
+            addressNumericMatch: {
+              $regexFind: {
+                input: { $ifNull: ["$_addressSecond", ""] },
+                regex: "^[0-9]+",
+              },
+            },
+          },
+        },
+        {
+          $addFields: {
+            addressNumber: {
+              $convert: {
+                input: "$addressNumericMatch.match",
+                to: "int",
+                onError: null,
+                onNull: null,
+              },
+            },
+            addressSuffix: {
+              $cond: [
+                { $ifNull: ["$addressNumericMatch.match", false] },
+                {
+                  $substr: [
+                    "$_addressSecond",
+                    { $strLenCP: "$addressNumericMatch.match" },
+                    -1,
+                  ],
+                },
+                "",
+              ],
+            },
+          },
+        },
+      );
+    }
+
+    if (Object.keys(sortStage).length > 0) {
+      pipeline.push({ $sort: sortStage });
+    }
+
+    pipeline.push({ $skip: (page - 1) * limit }, { $limit: limit });
+
+    if (isAddressSort) {
+      pipeline.push({
+        $project: {
+          addressPrefix: 0,
+          addressNumber: 0,
+          addressSuffix: 0,
+          _addressSecond: 0,
+          addressNumericMatch: 0,
+        },
+      });
+    }
+
+    const data = await collPayment.aggregate(pipeline).toArray();
     const totalItems = await collPayment.countDocuments(query);
     const totalPages = Math.ceil(totalItems / limit);
-    let totalIncome = 0;
-    data.forEach((payment) => {
-      totalIncome += parseInt(payment.nominal);
-    });
 
-    const response = {
-      currentPage: parseInt(page),
+    return {
+      currentPage: page,
       totalPages: totalPages,
       totalCount: totalItems,
-      perPage: parseInt(limit),
-      totalIncome,
+      perPage: limit,
+      totalIncome: totalIncome,
       data: data,
     };
-
-    return response;
   } catch (err) {
     console.error("Error connecting to MongoDB:", err);
     throw err;

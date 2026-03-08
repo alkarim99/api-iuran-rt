@@ -137,6 +137,7 @@ const update = async (data) => {
       $set: {
         description: data?.description,
         nominal: data?.nominal,
+        payment_method: data?.payment_method,
         transaction_at: new Date(data?.transaction_at),
         updated_at: new Date(),
       },

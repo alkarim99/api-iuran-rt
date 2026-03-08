@@ -26,6 +26,6 @@ const filterSchema = Joi.object({
   order: Joi.number(),
   page: Joi.number(),
   limit: Joi.number(),
-});
+}).unknown(true);
 
 module.exports = { idSchema, createSchema, updateSchema, filterSchema };

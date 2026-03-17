@@ -52,53 +52,38 @@ const signUp = async (req, res) => {
 
 const signIn = async (req, res) => {
   try {
-    console.time("signIn:total");
-
-    console.time("signIn:validate");
     const { error, value } = signInSchema.validate(req.body);
     if (error) {
-      console.timeEnd("signIn:validate");
-      console.timeEnd("signIn:total");
       return res.status(400).send({
         status: false,
         message: error.details[0].message,
       });
     }
-    console.timeEnd("signIn:validate");
 
     const { email, password } = value;
 
-    console.time("signIn:dbLookup");
     const checkUser = await usersRepository.getByEmail(email);
-    console.timeEnd("signIn:dbLookup");
     if (!checkUser) {
-      console.timeEnd("signIn:total");
       return res.status(400).json({
         status: false,
         message: "Account not registered!",
       });
     }
 
-    console.time("signIn:bcryptCompare");
     const isPasswordValid = await bcrypt.compare(password, checkUser?.password);
-    console.timeEnd("signIn:bcryptCompare");
     if (!isPasswordValid) {
-      console.timeEnd("signIn:total");
       return res.status(400).json({
         status: false,
         message: "Wrong email and password combination!",
       });
     }
 
-    console.time("signIn:jwtSign");
     const { password: _, ...userPayload } = checkUser;
     const token = jwt.sign(userPayload, process.env.JWT_PRIVATE_KEY, {
       expiresIn: "7d",
     });
-    console.timeEnd("signIn:jwtSign");
 
     const dataResponse = new SignInResponse(checkUser);
-    console.timeEnd("signIn:total");
     return res.send({
       status: true,
       message: "Sign In Success!",

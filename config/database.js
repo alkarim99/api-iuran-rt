@@ -7,6 +7,8 @@ let collectionExpenseV2 =
   process.env.DB_LIVE_COLLECTION_EXPENSE_V2 || collectionExpense + "_v2";
 let collectionOtherIncome =
   process.env.DB_LIVE_COLLECTION_OTHER_INCOME || "other_income";
+let collectionOpeningBalance =
+  process.env.DB_LIVE_COLLECTION_OPENING_BALANCE || "opening_balances";
 let collectionPaymentsType = process.env.DB_LIVE_COLLECTION_PAYMENT_TYPE;
 let collectionActivityLogs =
   process.env.DB_LIVE_COLLECTION_ACTIVITY_LOGS || "activity_logs";
@@ -25,6 +27,8 @@ if (process.env.NODE_ENV == "development" || process.env.NODE_ENV == "local") {
     process.env.DB_DEV_COLLECTION_EXPENSE_V2 || collectionExpense + "_v2";
   collectionOtherIncome =
     process.env.DB_DEV_COLLECTION_OTHER_INCOME || "other_income";
+  collectionOpeningBalance =
+    process.env.DB_DEV_COLLECTION_OPENING_BALANCE || "opening_balances";
   collectionPaymentsType = process.env.DB_DEV_COLLECTION_PAYMENT_TYPE;
   collectionActivityLogs =
     process.env.DB_DEV_COLLECTION_ACTIVITY_LOGS || "activity_logs";
@@ -42,6 +46,7 @@ const collPayment = client.db(dbPayment).collection(collectionPayment);
 const collExpense = client.db(dbPayment).collection(collectionExpense);
 const collExpenseV2 = client.db(dbPayment).collection(collectionExpenseV2);
 const collOtherIncome = client.db(dbPayment).collection(collectionOtherIncome);
+const collOpeningBalance = client.db(dbPayment).collection(collectionOpeningBalance);
 const collPaymentType = client.db(dbPayment).collection(collectionPaymentsType);
 const collActivityLogs = client
   .db(dbPayment)
@@ -62,6 +67,7 @@ module.exports = {
   collExpense,
   collExpenseV2,
   collOtherIncome,
+  collOpeningBalance,
   collPaymentType,
   collActivityLogs,
   collUser,

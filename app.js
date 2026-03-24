@@ -11,6 +11,7 @@ const expenseRouter = require("./routes/expense.route");
 const migrationRouter = require("./routes/migration.route");
 const otherIncomeRouter = require("./routes/otherIncome.route");
 const reportRouter = require("./routes/report.route");
+const openingBalanceRouter = require("./routes/openingBalance.route");
 const invalidRoutes = require("./routes/404.route");
 
 const helmet = require("helmet");
@@ -36,6 +37,7 @@ app.use("/api", expenseRouter);
 app.use("/api", migrationRouter);
 app.use("/api", otherIncomeRouter);
 app.use("/api", reportRouter);
+app.use("/api/opening-balances", openingBalanceRouter);
 app.use("/api", userRouter);
 
 // Home

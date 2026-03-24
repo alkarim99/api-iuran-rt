@@ -1,9 +1,78 @@
 const paymentRepo = require("../repositories/payments.repository");
 const expenseRepo = require("../repositories/expense.repository");
 const otherIncomeRepo = require("../repositories/otherIncome.repository");
+const openingBalanceRepo = require("../repositories/openingBalance.repository");
 
 // Helper to format date uniformly
 const formatDate = (date) => new Date(date).toISOString().split("T")[0];
+
+const fetchTransactions = async (start, end, paymentMethodFilter) => {
+  let paymentData = [];
+  if (paymentMethodFilter) {
+    paymentData = (await paymentRepo.getByPaymentMethod(start, end, paymentMethodFilter)).data;
+  } else {
+    paymentData = (await paymentRepo.getByPayAt(start, end, "", "pay_at", 1, 1, 10000)).data;
+  }
+
+  let otherIncomeData = (await otherIncomeRepo.getByTransactionAt(start, end, "", "transaction_at", 1, 10000)).data;
+  if (paymentMethodFilter) {
+    const filterLower = paymentMethodFilter.toLowerCase();
+    otherIncomeData = otherIncomeData.filter((item) => (item.payment_method || "").toLowerCase() === filterLower);
+  }
+
+  let expenseData = (await expenseRepo.getByTransactionAt(start, end, "", "transaction_at", 1, 10000)).data;
+  if (paymentMethodFilter) {
+    const filterLower = paymentMethodFilter.toLowerCase();
+    expenseData = expenseData.filter((item) => (item.payment_method || "").toLowerCase() === filterLower);
+  }
+
+  let allTransactions = [];
+  let totalDebit = 0;
+  let totalKredit = 0;
+
+  paymentData.forEach((p) => {
+    const nom = parseFloat(p.nominal);
+    totalDebit += nom;
+    allTransactions.push({
+      date: formatDate(p.pay_at),
+      timestamp: new Date(p.pay_at).getTime(),
+      description: `Pembayaran Iuran Warga ${p.warga?.name || ""}`,
+      debit: nom,
+      kredit: 0,
+      type: "Iuran",
+    });
+  });
+
+  otherIncomeData.forEach((oi) => {
+    const nom = parseFloat(oi.nominal);
+    totalDebit += nom;
+    allTransactions.push({
+      date: formatDate(oi.transaction_at),
+      timestamp: new Date(oi.transaction_at).getTime(),
+      description: oi.description,
+      debit: nom,
+      kredit: 0,
+      type: "Pemasukan Lainnya",
+    });
+  });
+
+  expenseData.forEach((e) => {
+    const nom = parseFloat(e.nominal);
+    totalKredit += nom;
+    allTransactions.push({
+      date: formatDate(e.transaction_at),
+      timestamp: new Date(e.transaction_at).getTime(),
+      description: e.description,
+      debit: 0,
+      kredit: nom,
+      type: "Pengeluaran",
+    });
+  });
+
+  allTransactions.sort((a, b) => a.timestamp - b.timestamp);
+
+  return { allTransactions, totalDebit, totalKredit };
+};
 
 const buildReport = async (req, res, paymentMethodFilter = null) => {
   try {
@@ -18,105 +87,25 @@ const buildReport = async (req, res, paymentMethodFilter = null) => {
 
     const start = new Date(start_date);
     const end = new Date(end_date);
-    end.setHours(23, 59, 59, 999); // Include entire end day
+    end.setHours(23, 59, 59, 999);
 
-    // 1. Fetch Payments (Iuran)
-    let paymentData = [];
-    if (paymentMethodFilter) {
-      paymentData = await paymentRepo.getByPaymentMethod(
-        start,
-        end,
-        paymentMethodFilter,
-      );
-      paymentData = paymentData.data;
-    } else {
-      // If no filter, fetch all within range. Reusing getByPayAt logic
-      const payments = await paymentRepo.getByPayAt(
-        start,
-        end,
-        "",
-        "pay_at",
-        1,
-        1,
-        10000,
-      );
-      paymentData = payments.data;
+    // Calculate carry-over balance (Saldo Awal for requested period)
+    const year = start.getFullYear();
+    const typeOpBal = paymentMethodFilter === "cash" ? "petty_cash" : "rekening";
+    const opBalDoc = await openingBalanceRepo.getOne(year, typeOpBal);
+    let carryOverBalance = opBalDoc ? opBalDoc.nominal : 0;
+
+    const jan1 = new Date(year, 0, 1);
+    if (start > jan1) {
+      const preStart = new Date(start.getTime() - 1);
+      const preData = await fetchTransactions(jan1, preStart, paymentMethodFilter);
+      carryOverBalance += preData.totalDebit - preData.totalKredit;
     }
 
-    // 2. Fetch Other Incomes
-    let otherIncomeData = await otherIncomeRepo.getByTransactionAt(
-      start,
-      end,
-      "",
-      "transaction_at",
-      1,
-      10000,
-    );
-    otherIncomeData = otherIncomeData.data;
-    if (paymentMethodFilter) {
-      const filterLower = paymentMethodFilter.toLowerCase();
-      otherIncomeData = otherIncomeData.filter(
-        (item) => (item.payment_method || "").toLowerCase() === filterLower,
-      );
-    }
-
-    // 3. Fetch Expenses
-    let expenseData = await expenseRepo.getByTransactionAt(
-      start,
-      end,
-      "",
-      "transaction_at",
-      1,
-      10000,
-    );
-    expenseData = expenseData.data;
-    if (paymentMethodFilter) {
-      const filterLower = paymentMethodFilter.toLowerCase();
-      expenseData = expenseData.filter(
-        (item) => (item.payment_method || "").toLowerCase() === filterLower,
-      );
-    }
-
-    // 4. Combine and Sort all transactions
-    let allTransactions = [];
-
-    paymentData.forEach((p) => {
-      allTransactions.push({
-        date: formatDate(p.pay_at),
-        timestamp: new Date(p.pay_at).getTime(),
-        description: `Pembayaran Iuran Warga ${p.warga?.name || ""}`,
-        debit: parseFloat(p.nominal),
-        kredit: 0,
-        type: "Iuran",
-      });
-    });
-
-    otherIncomeData.forEach((oi) => {
-      allTransactions.push({
-        date: formatDate(oi.transaction_at),
-        timestamp: new Date(oi.transaction_at).getTime(),
-        description: oi.description,
-        debit: parseFloat(oi.nominal),
-        kredit: 0,
-        type: "Pemasukan Lainnya",
-      });
-    });
-
-    expenseData.forEach((e) => {
-      allTransactions.push({
-        date: formatDate(e.transaction_at),
-        timestamp: new Date(e.transaction_at).getTime(),
-        description: e.description,
-        debit: 0,
-        kredit: parseFloat(e.nominal),
-        type: "Pengeluaran",
-      });
-    });
-
-    allTransactions.sort((a, b) => a.timestamp - b.timestamp);
+    let { allTransactions } = await fetchTransactions(start, end, paymentMethodFilter);
 
     // 5. Calculate Running Balance
-    let runningBalance = 0;
+    let runningBalance = carryOverBalance;
     allTransactions = allTransactions.map((tx) => {
       runningBalance += tx.debit;
       runningBalance -= tx.kredit;
@@ -131,6 +120,7 @@ const buildReport = async (req, res, paymentMethodFilter = null) => {
       status: true,
       data: allTransactions,
       total_transactions: allTransactions.length,
+      saldo_awal: carryOverBalance,
       final_balance: runningBalance,
     });
   } catch (err) {
@@ -164,6 +154,22 @@ const getNeracaKasReport = async (req, res) => {
     const start = new Date(start_date);
     const end = new Date(end_date);
     end.setHours(23, 59, 59, 999);
+
+    // Calculate carry-over balance (Saldo Awal for requested period)
+    const year = start.getFullYear();
+    const opBalPetty = await openingBalanceRepo.getOne(year, "petty_cash");
+    const opBalRekening = await openingBalanceRepo.getOne(year, "rekening");
+    
+    let carryOverBalance = 0;
+    if (opBalPetty) carryOverBalance += opBalPetty.nominal;
+    if (opBalRekening) carryOverBalance += opBalRekening.nominal;
+
+    const jan1 = new Date(year, 0, 1);
+    if (start > jan1) {
+      const preStart = new Date(start.getTime() - 1);
+      const preData = await fetchTransactions(jan1, preStart); // No filter for Neraca
+      carryOverBalance += preData.totalDebit - preData.totalKredit;
+    }
 
     const payments = await paymentRepo.getByPayAt(
       start,
@@ -251,6 +257,7 @@ const getNeracaKasReport = async (req, res) => {
         total_income: totalIncome,
         total_expense: totalExpense,
         net_balance: netBalance,
+        saldo_awal: carryOverBalance,
         transactions: transactions,
       },
     });

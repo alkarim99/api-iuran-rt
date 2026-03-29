@@ -1,5 +1,26 @@
 # Backend Release Notes & Changelog
 
+## [v2.3.0] - Opening Balance & Formatted Excel Export
+
+_Release Date: March 2026_
+
+This version introduces a new master data for initial balances and a professional reporting export system.
+
+### New Features
+
+- **Master Saldo Awal (Opening Balance)**:
+  - New API module (`/api/opening-balances`) to manage annual initial balances for Petty Cash and Rekening.
+  - Compound unique index implementation on `{ year, type }` to prevent duplicate data.
+  - Integration into all financial reports as the starting point for running balances.
+- **Formatted Excel Export (ExcelJS)**:
+  - Implementation of **ExcelJS** to replace plain SheetJS exports.
+  - Professional reporting templates for Laporan Petty Cash, Laporan Kas Rekening, Rincian Iuran, and Neraca Kas RT.
+  - Includes full styling: bold headers, light gray background, Rupiah currency formatting (`Rp1.320.000,00`), and automatic running balance calculation.
+- **Neraca Kas RT Report**:
+  - New aggregated API (`/api/reports/neraca-kas`) that combines all income and expense types for a total financial overview.
+
+---
+
 ## [v2.2.0] - Table Standardization
 
 _Release Date: March 2026_

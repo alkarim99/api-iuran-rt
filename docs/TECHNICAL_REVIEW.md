@@ -67,6 +67,15 @@ erDiagram
         date created_at
         date updated_at
     }
+    OPENING_BALANCE {
+        ObjectId _id
+        int year
+        string type "(petty_cash | rekening)"
+        int nominal
+        string note
+        date created_at
+        date updated_at
+    }
     PAYMENT_TYPE {
         ObjectId _id
         string name
@@ -86,7 +95,7 @@ erDiagram
 | `checkToken` | `middleware/jwt.middleware.js` | Verifikasi JWT token dari header `Authorization: Bearer <token>` |
 | `adminRole`  | `middleware/middleware.js`     | Verifikasi token + cek `role === "admin"`. Menolak non-admin     |
 
-> **Semua endpoint data** (warga, payments, users, expense) dilindungi `adminRole`. Hanya Sign In (`POST /auth/signin`) yang bersifat public. Sign Up juga dilindungi `adminRole`, artinya hanya admin yang bisa membuat user baru.
+> **Semua endpoint data** (warga, payments, users, expense, opening-balance) dilindungi `adminRole`. Hanya Sign In (`POST /auth/signin`) yang bersifat public. Sign Up juga dilindungi `adminRole`, artinya hanya admin yang bisa membuat user baru.
 
 ---
 
@@ -264,28 +273,28 @@ flowchart TD
 
 **Field: `nominal`, `transaction_at`, `description`**
 
-### 3.5 Laporan Keuangan (Reports)
+### 3.5 Laporan Keuangan & Export Excel — **Updated**
 
-Ada **2 laporan terpisah** berdasarkan metode pembayaran:
+Terdapat tiga jenis laporan utama yang mendukung **Export Excel Terformat** menggunakan library **ExcelJS**.
 
-| Laporan               | Route Frontend     | Metode Pembayaran | Fitur Tambahan                         |
-| --------------------- | ------------------ | ----------------- | -------------------------------------- |
-| **Laporan Bu Agus**   | `/report/cash`     | Cash              | ✅ Termasuk data Pengeluaran (Expense) |
-| **Laporan Bu Harris** | `/report/transfer` | Transfer          | ❌ Hanya data pemasukan                |
+| Laporan               | Route Frontend        | Deskripsi                                                                                              |
+| --------------------- | --------------------- | ------------------------------------------------------------------------------------------------------ |
+| **Laporan Bu Agus**   | `/report/cash`        | Dana Petty Cash (Pemasukan Cash + Pengeluaran). Menyertakan Saldo Awal Petty Cash tahunan.             |
+| **Laporan Bu Harris** | `/report/transfer`    | Dana Rekening BCA (Pemasukan Transfer). Menyertakan Saldo Awal Rekening tahunan.                       |
+| **Neraca Kas RT**     | `/report/neraca`      | Laporan gabungan paralel antara pemasukan dan pengeluaran secara keseluruhan.                          |
+| **Rincian Iuran**     | `/iuran/rincian`      | Rincian pembagian iuran (RT/PKK/Sosial/Kematian) per warga dalam satu periode.                         |
 
-```mermaid
-flowchart LR
-    A["Laporan Bu Agus (Cash)"] --> B["GET /payments/method?pay_at=...&payment_method=cash"]
-    A --> C["GET /expense/periode?transaction_at=..."]
-    B --> D["Pemasukan Cash + Total"]
-    C --> E["Pengeluaran + Total"]
+#### 3.5.1 Saldo Awal (Opening Balance)
+Saldo awal kini dikelola sebagai **data master tahunan** (bukan transaksi biasa). 
+- Disimpan di collection `opening_balances`.
+- Dipisahkan menjadi dua tipe: `petty_cash` dan `rekening`.
+- Digunakan sebagai baris pertama (running balance awal) pada laporan bulanan dalam tahun yang sama.
 
-    F["Laporan Bu Harris (Transfer)"] --> G["GET /payments/method?pay_at=...&payment_method=transfer"]
-    G --> H["Pemasukan Transfer + Total"]
-```
-
-> **Bu Agus** = Bendahara penerima uang **cash** sekaligus penanggung jawab **pengeluaran** RT. Oleh karena itu laporannya menampilkan data pemasukan cash DAN pengeluaran.
-> **Bu Harris** = Bendahara penerima **transfer**. Hanya bertugas menerima pemasukan melalui transfer, tidak mengelola pengeluaran.
+#### 3.5.2 Formatted Excel Export (ExcelJS)
+Aplikasi menggunakan **ExcelJS** untuk menghasilkan file `.xlsx` dengan styling lengkap:
+- **Header:** Nama institusi, periode, dan judul laporan.
+- **Styling:** Bold headers, background warna abu-abu pada header, border tipis, dan format mata uang Rupiah (`Rp1.320.000,00`).
+- **Logika:** Perhitungan *running balance* (Saldo Akhir) dilakukan secara otomatis di dalam Excel sesuai baris transaksi.
 
 ### 3.6 Manajemen User
 
@@ -298,8 +307,6 @@ flowchart LR
 | Delete  | `DELETE /users/:id` | Admin only, Hard Delete                           |
 
 **User fields:** `name`, `email`, `password`, `role`
-
-> **Role** disimpan sebagai string bebas (tidak ada enum di backend). Middleware hanya mengecek `role === "admin"`. Role selain "admin" tidak memiliki akses ke data manapun.
 
 ---
 
@@ -316,12 +323,14 @@ flowchart TD
         N_USER["Data User"]
         N_WARGA["Data Warga"]
         N_EXPENSE["Data Pengeluaran"]
+        N_SALDO["Saldo Awal"]
         N_IURAN_DD["Iuran ▾"]
         N_IURAN_DD --> N_DATA_IURAN["Data Iuran"]
         N_IURAN_DD --> N_RINCIAN["Rincian Iuran"]
         N_LAPORAN_DD["Laporan ▾"]
         N_LAPORAN_DD --> N_CASH["Laporan Bu Agus"]
         N_LAPORAN_DD --> N_TRANSFER["Laporan Bu Harris"]
+        N_LAPORAN_DD --> N_NERACA["Neraca Kas RT"]
     end
 
     N_DATA_IURAN --> IURAN_INDEX["/iuran — List semua pembayaran"]
@@ -342,14 +351,12 @@ flowchart TD
 ## 5. API Endpoints Reference
 
 ### Auth
-
 | Method | Endpoint       | Auth      | Deskripsi          |
 | ------ | -------------- | --------- | ------------------ |
 | POST   | `/auth/signin` | ❌ Public | Login              |
 | POST   | `/auth/signup` | ✅ Admin  | Register user baru |
 
 ### Warga
-
 | Method | Endpoint         | Deskripsi                     |
 | ------ | ---------------- | ----------------------------- |
 | GET    | `/wargas`        | List paginated + search       |
@@ -360,7 +367,6 @@ flowchart TD
 | DELETE | `/wargas/:id`    | Hard delete                   |
 
 ### Payments
-
 | Method | Endpoint               | Deskripsi                                                  |
 | ------ | ---------------------- | ---------------------------------------------------------- |
 | GET    | `/payments`            | List paginated + search                                    |
@@ -375,34 +381,26 @@ flowchart TD
 | PUT    | `/payments`            | Update payment (accepts optional details_payment override) |
 | DELETE | `/payments/:id`        | Hard delete                                                |
 
-### Expense
+### Opening Balance (Saldo Awal) — **New**
+| Method | Endpoint                 | Deskripsi                                             |
+| ------ | ------------------------ | ----------------------------------------------------- |
+| GET    | `/api/opening-balances`  | Ambil saldo awal berdasarkan tahun dan tipe           |
+| POST   | `/api/opening-balances`  | Simpan/Update (Upsert) saldo awal                     |
+| DELETE | `/api/opening-balances`  | Hapus saldo awal tahunan                              |
 
-| Method | Endpoint           | Deskripsi               |
-| ------ | ------------------ | ----------------------- |
-| GET    | `/expense`         | List paginated + search |
-| GET    | `/expense/:id`     | Detail by ID            |
-| GET    | `/expense/periode` | Filter by month         |
-| POST   | `/expense`         | Create                  |
-| PUT    | `/expense`         | Update                  |
-| DELETE | `/expense/:id`     | Hard delete             |
-
-### Users
-
-| Method | Endpoint     | Deskripsi    |
-| ------ | ------------ | ------------ |
-| GET    | `/users`     | List semua   |
-| GET    | `/users/:id` | Detail by ID |
-| PATCH  | `/users`     | Update       |
-| DELETE | `/users/:id` | Hard delete  |
-
-> Semua endpoint kecuali `/auth/signin` memerlukan token admin (`adminRole` middleware).
+### Reports — **New**
+| Method | Endpoint                          | Deskripsi                                            |
+| ------ | --------------------------------- | ---------------------------------------------------- |
+| GET    | `/api/reports/petty-cash`         | Data laporan Bu Agus (Cash + Expense + Saldo Awal)   |
+| GET    | `/api/reports/kas-rekening`       | Data laporan Bu Harris (Transfer + Saldo Awal)       |
+| GET    | `/api/reports/neraca-kas`         | Data laporan neraca gabungan                         |
+| GET    | `/api/reports/dashboard-summary`  | Ringkasan total pemasukan/pengeluaran untuk dashboard |
 
 ---
 
 ## 6. Temuan & Catatan Teknis
 
 ### 6.1 Potensi Issue
-
 | #   | Area             | Temuan                                                                                                                                                                             | Severity  |
 | --- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
 | 1   | **Auth**         | JWT tidak memiliki expiry time (`expiresIn`). Token valid selamanya selama private key tidak berubah.                                                                              | ⚠️ Medium |
@@ -413,22 +411,16 @@ flowchart TD
 | 6   | **Payment**      | Belum ada mekanisme **overpayment carry-over** — kelebihan bayar tidak otomatis dikurangi dari tagihan berikutnya.                                                                 | ⚠️ Medium |
 | 7   | **Delete**       | Semua data menggunakan Hard Delete. Tidak ada soft delete mechanism. Data yang terhapus tidak bisa dikembalikan.                                                                   | ℹ️ Info   |
 | 8   | **PaymentType**  | Repository `paymentType.repository.js` memiliki bug di `getAll()` — variabel `query` dan `options` tidak didefinisikan sebelum digunakan.                                          | 🔴 Bug    |
-| 9   | **PaymentType**  | Entity dan repository PaymentType sudah ada, tapi tidak digunakan sama sekali oleh controller manapun dan tidak ada route-nya.                                                     | ℹ️ Info   |
-| 10  | **Security**     | JWT payload menyertakan seluruh data user (termasuk `_class`, `created_at`, dll) — hanya password yang di-null-kan.                                                                | ℹ️ Info   |
-| 11  | **Auth Reducer** | Redux `auth` slice masih memiliki field `recipes` yang tampaknya sisa dari project lain dan tidak digunakan.                                                                       | ℹ️ Info   |
-
-> Bug #2 dan #3 (missing early return) sudah memiliki **rencana perbaikan** yang disiapkan sebelumnya. Perbaikan akan dieksekusi terpisah.
 
 ### 6.2 Pattern yang Bagus
-
 | #   | Area                 | Catatan                                                                                                                                                                                                                                                                        |
 | --- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | 1   | **Warga Sync**       | Fire-and-forget pattern untuk sinkronisasi data warga ke payment records — tidak blocking response user                                                                                                                                                                        |
 | 2   | **Address Sorting**  | MongoDB aggregation pipeline yang memecah address menjadi prefix, number, dan suffix untuk natural sorting                                                                                                                                                                     |
 | 3   | **DTO Validation**   | Penggunaan Joi schema untuk validasi input yang konsisten di semua endpoint                                                                                                                                                                                                    |
-| 4   | **Custom Hooks**     | Frontend menggunakan custom hooks (`usePayments`, `useCreatePayments`, `useEditPayments`, `useUsers`, `useTableState`) untuk separation of concern. `useTableState` secara inovatif mem-_persist_ parameter query pencarian (_Page, limit, sort_) langsung ke Session Storage. |
-| 5   | **Security Headers** | Penggunaan Helmet.js dan XSS-Clean middleware                                                                                                                                                                                                                                  |
-| 6   | **Latest Period**    | UX yang baik — saat create pembayaran, auto-fetch periode terakhir warga sebagai referensi                                                                                                                                                                                     |
+| 4   | **Formatted Excel**  | Penggunaan **ExcelJS** untuk menghasilkan laporan Excel yang siap cetak (WYSIWYG) dengan styling profesional.                                                                                                                                                                  |
+| 5   | **Saldo Awal Master**| Pemisahan saldo awal sebagai data master tahunan memudahkan bendahara melakukan penyesuaian saldo tiap tahun tanpa mengotori data transaksi.                                                                                                                                  |
+| 6   | **Custom Hooks**     | Frontend menggunakan custom hooks (`usePayments`, `useTableState`, dll) untuk pemisahan logika dan tampilan.                                                                                                                                                                   |
 
 ---
 
@@ -437,31 +429,23 @@ flowchart TD
 ```mermaid
 flowchart TB
     subgraph SETUP ["Setup Awal"]
-        A1["Admin Login"] --> A2["Daftarkan Data Warga (nama + alamat)"]
+        A1["Admin Login"] --> A2["Daftarkan Data Warga"]
+        A2 --> A3["Input Saldo Awal Tahunan (Petty Cash & Rekening)"]
     end
 
     subgraph CORE ["Operasi Inti (Bulanan)"]
         B1["Warga membayar iuran (cash/transfer)"]
         B1 --> B2["Admin mencatat pembayaran"]
         B2 --> B3["Sistem menghitung rincian otomatis"]
-        B3 --> B4{"Tier?"}
-        B4 -->|"Kelipatan 75K"| B5["RT only: Rp 75.000/bulan"]
-        B4 -->|"Lainnya"| B6["Lengkap: RT + PKK + Sosial + Kematian = Rp 110.000/bulan"]
     end
 
-    subgraph EXPENSE_FLOW ["Pencatatan Pengeluaran"]
-        C1["Admin mencatat pengeluaran RT"]
-    end
-
-    subgraph REPORTING ["Pelaporan"]
-        D1["Laporan Bu Agus — Pemasukan Cash + Pengeluaran"]
-        D2["Laporan Bu Harris — Pemasukan Transfer"]
-        D3["Rincian Iuran per Periode"]
-        D4["Total Pendapatan per Rentang Tanggal"]
-        D5["Report per Warga (breakdown bulanan)"]
+    subgraph REPORTING ["Pelaporan & Export"]
+        D1["Laporan Bu Agus (Cash)"]
+        D2["Laporan Bu Harris (Transfer)"]
+        D3["Neraca Kas RT (Gabungan)"]
+        D1 & D2 & D3 --> EXCEL["Export Excel Terformat (ExcelJS)"]
     end
 
     SETUP --> CORE
     CORE --> REPORTING
-    EXPENSE_FLOW --> D1
 ```

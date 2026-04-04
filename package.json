@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "test": "jest --verbose --forceExit --detectOpenHandles"
+    "test": "jest --verbose --forceExit --detectOpenHandles",
+    "create-indexes": "node scripts/create-indexes.js",
+    "create-indexes:local": "NODE_ENV=local node scripts/create-indexes.js"
   },
   "author": "Abdullah Al-Karim",
   "license": "ISC",

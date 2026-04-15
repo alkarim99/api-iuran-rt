@@ -1,4 +1,5 @@
-const { collExpense, collExpenseV2 } = require("../config/database");
+const { collExpense, collExpenseV2, collPayment } = require("../config/database");
+const { ObjectId } = require("mongodb");
 
 const migrateExpenses = async (req, res) => {
   try {
@@ -41,6 +42,58 @@ const migrateExpenses = async (req, res) => {
   }
 };
 
+const fixWargaIdPayments = async (req, res) => {
+  try {
+    const payments = await collPayment
+      .find({
+        "warga._id": { $type: "string" },
+      })
+      .toArray();
+
+    if (payments.length === 0) {
+      return res.send({
+        status: true,
+        message: "No payments found with warga._id as string.",
+        fixedCount: 0,
+      });
+    }
+
+    let fixedCount = 0;
+    for (const payment of payments) {
+      const stringId = payment.warga?._id;
+      if (
+        stringId &&
+        stringId.length === 24 &&
+        /^[0-9a-fA-F]+$/.test(stringId)
+      ) {
+        try {
+          await collPayment.updateOne(
+            { _id: payment._id },
+            { $set: { "warga._id": new ObjectId(stringId) } },
+          );
+          fixedCount++;
+        } catch (e) {
+          // Skip errors for individual records
+        }
+      }
+    }
+
+    res.send({
+      status: true,
+      message: `Successfully fixed ${fixedCount} warga._id records in payments collection.`,
+      fixedCount,
+    });
+  } catch (error) {
+    console.error("Fix error:", error);
+    res.status(500).send({
+      status: false,
+      message: "An error occurred during the fix process.",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   migrateExpenses,
+  fixWargaIdPayments,
 };

@@ -24,13 +24,16 @@ const getAll = async (
     }
 
     let sortStage = {};
-    sortStage = {
-      addressPrefix: order,
-      addressNumber: order,
-      addressSuffix: order,
-    };
-    if (sort_by) {
-      sortStage[sort_by] = order;
+    if (sort_by === "address" || sort_by === "warga.address") {
+      sortStage = {
+        addressPrefix: order,
+        addressNumber: order,
+        addressSuffix: order,
+      };
+    } else if (sort_by) {
+      sortStage = {
+        [sort_by]: order,
+      };
     }
 
     const pipeline = [
@@ -124,6 +127,7 @@ const getByPayAt = async (
   lastDay,
   keyword,
   sort_by,
+  order = -1,
   page = 1,
   limit = 20,
 ) => {
@@ -143,13 +147,87 @@ const getByPayAt = async (
     }
     query["$and"] = [{ pay_at: { $gte: firstDay, $lte: lastDay } }];
 
-    let sort = {};
-    if (sort_by) {
-      sort[sort_by] = sort_by === "asc" ? 1 : -1;
-      options.sort = sort;
+    let sortStage = {};
+    if (sort_by === "address" || sort_by === "warga.address") {
+      sortStage = {
+        addressPrefix: parseInt(order) === 1 ? 1 : -1,
+        addressNumber: parseInt(order) === 1 ? 1 : -1,
+        addressSuffix: parseInt(order) === 1 ? 1 : -1,
+      };
+    } else if (sort_by) {
+      sortStage = {
+        [sort_by]: parseInt(order) === 1 ? 1 : -1,
+      };
     }
 
-    const data = await collPayment.find(query, options).toArray();
+    const pipeline = [
+      { $match: query },
+      {
+        $addFields: {
+          addressPrefix: {
+            $arrayElemAt: [{ $split: ["$warga.address", "-"] }, 0],
+          },
+          _addressSecond: {
+            $arrayElemAt: [{ $split: ["$warga.address", "-"] }, 1],
+          },
+        },
+      },
+      {
+        $addFields: {
+          addressNumericMatch: {
+            $regexFind: {
+              input: { $ifNull: ["$_addressSecond", ""] },
+              regex: "^[0-9]+",
+            },
+          },
+        },
+      },
+      {
+        $addFields: {
+          addressNumber: {
+            $convert: {
+              input: "$addressNumericMatch.match",
+              to: "int",
+              onError: null,
+              onNull: null,
+            },
+          },
+          addressSuffix: {
+            $cond: [
+              { $ifNull: ["$addressNumericMatch.match", false] },
+              {
+                $substr: [
+                  "$_addressSecond",
+                  { $strLenCP: "$addressNumericMatch.match" },
+                  -1,
+                ],
+              },
+              "",
+            ],
+          },
+        },
+      },
+    ];
+
+    if (Object.keys(sortStage).length > 0) {
+      pipeline.push({ $sort: sortStage });
+    }
+
+    pipeline.push(
+      { $skip: (parseInt(page) - 1) * parseInt(limit) },
+      { $limit: parseInt(limit) },
+      {
+        $project: {
+          addressPrefix: 0,
+          addressNumber: 0,
+          addressSuffix: 0,
+          _addressSecond: 0,
+          addressNumericMatch: 0,
+        },
+      },
+    );
+
+    const data = await collPayment.aggregate(pipeline).toArray();
     const totalItems = await collPayment.countDocuments(query);
     const totalPages = Math.ceil(totalItems / limit);
 
@@ -198,40 +276,141 @@ const getByWargaID = async (id, sort_by) => {
   }
 };
 
-const getTotalIncome = async (start, end, sort_by, page = 1, limit = 20) => {
+const getTotalIncome = async (
+  start,
+  end,
+  sort_by,
+  orderNum,
+  page = 1,
+  limit = 20,
+) => {
   try {
-    let query = {
-      pay_at: { $gte: new Date(start), $lte: new Date(end) },
-    };
-    let options = {
-      skip: (parseInt(page) - 1) * parseInt(limit),
-      limit: parseInt(limit),
-    };
-
-    let sort = {};
-    if (sort_by) {
-      sort[sort_by] = sort_by === "asc" ? 1 : -1;
-      options.sort = sort;
+    let query = {};
+    if (start && end) {
+      query.pay_at = { $gte: new Date(start), $lte: new Date(end) };
     }
 
-    const data = await collPayment.find(query, options).toArray();
+    page = parseInt(page) || 1;
+    limit = parseInt(limit) || 20;
+
+    // 1. Calculate overall total income independent of pagination
+    const incomeAgg = await collPayment
+      .aggregate([
+        { $match: query },
+        {
+          $group: {
+            _id: null,
+            total: { $sum: "$nominal" },
+          },
+        },
+      ])
+      .toArray();
+    const totalIncome = incomeAgg.length > 0 ? incomeAgg[0].total : 0;
+
+    // 2. Determine Sorting Direction Strategy
+    let sortStage = {};
+    let order = parseInt(orderNum) || 1;
+    if (!sort_by) {
+      sort_by = "pay_at";
+      order = -1;
+    }
+
+    const isAddressSort = sort_by === "address" || sort_by === "warga.address";
+    if (isAddressSort) {
+      sortStage = {
+        addressPrefix: order,
+        addressNumber: order,
+        addressSuffix: order,
+      };
+    } else if (sort_by) {
+      sortStage = {
+        [sort_by]: order,
+      };
+    }
+
+    // 3. Build aggregation pipeline for data with alphanumeric address sorting
+    const pipeline = [{ $match: query }];
+
+    if (isAddressSort) {
+      pipeline.push(
+        {
+          $addFields: {
+            addressPrefix: {
+              $arrayElemAt: [{ $split: ["$warga.address", "-"] }, 0],
+            },
+            _addressSecond: {
+              $arrayElemAt: [{ $split: ["$warga.address", "-"] }, 1],
+            },
+          },
+        },
+        {
+          $addFields: {
+            addressNumericMatch: {
+              $regexFind: {
+                input: { $ifNull: ["$_addressSecond", ""] },
+                regex: "^[0-9]+",
+              },
+            },
+          },
+        },
+        {
+          $addFields: {
+            addressNumber: {
+              $convert: {
+                input: "$addressNumericMatch.match",
+                to: "int",
+                onError: null,
+                onNull: null,
+              },
+            },
+            addressSuffix: {
+              $cond: [
+                { $ifNull: ["$addressNumericMatch.match", false] },
+                {
+                  $substr: [
+                    "$_addressSecond",
+                    { $strLenCP: "$addressNumericMatch.match" },
+                    -1,
+                  ],
+                },
+                "",
+              ],
+            },
+          },
+        },
+      );
+    }
+
+    if (Object.keys(sortStage).length > 0) {
+      pipeline.push({ $sort: sortStage });
+    }
+
+    pipeline.push({ $skip: (page - 1) * limit }, { $limit: limit });
+
+    if (isAddressSort) {
+      pipeline.push({
+        $project: {
+          addressPrefix: 0,
+          addressNumber: 0,
+          addressSuffix: 0,
+          _addressSecond: 0,
+          addressNumericMatch: 0,
+        },
+      });
+    }
+
+    const data = await collPayment.aggregate(pipeline).toArray();
     const totalItems = await collPayment.countDocuments(query);
     const totalPages = Math.ceil(totalItems / limit);
-    let totalIncome = 0;
-    data.forEach((payment) => {
-      totalIncome += parseInt(payment.nominal);
-    });
 
-    const response = {
-      currentPage: parseInt(page),
+    return {
+      currentPage: page,
       totalPages: totalPages,
       totalCount: totalItems,
-      perPage: parseInt(limit),
-      totalIncome,
+      perPage: limit,
+      totalIncome: totalIncome,
       data: data,
     };
-
-    return response;
   } catch (err) {
     console.error("Error connecting to MongoDB:", err);
     throw err;

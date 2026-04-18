@@ -1,8 +1,9 @@
 const { ObjectId } = require("mongodb");
 const model = require("../repositories/payments.repository");
+const { createLog } = require("../helpers/audit.helper");
 const { collWarga } = require("../config/database");
-const { paymentEntity } = require("../entities/payment.entity");
-const { wargaDataEmbed } = require("../entities/warga.entity");
+const { PaymentEntity } = require("../entities/payment.entity");
+const { WargaDataEmbed } = require("../entities/warga.entity");
 const {
   idSchema,
   createSchema,
@@ -57,7 +58,7 @@ const getByPayAt = async (req, res) => {
       });
     }
 
-    const { keyword, sort_by, page, limit, pay_at } = value;
+    const { keyword, sort_by, order, page, limit, pay_at } = value;
     const payAt = new Date(pay_at);
     const firstDay = new Date(payAt.getFullYear(), payAt.getMonth(), 1);
     const lastDay = new Date(payAt.getFullYear(), payAt.getMonth() + 1, 0);
@@ -66,6 +67,7 @@ const getByPayAt = async (req, res) => {
       lastDay,
       keyword,
       sort_by,
+      order,
       page,
       limit,
     );
@@ -172,8 +174,23 @@ const getByWargaID = async (req, res) => {
 
 const getTotalIncome = async (req, res) => {
   try {
-    const { start, end, sort_by, page, limit } = req?.query;
-    const data = await model.getTotalIncome(start, end, sort_by, page, limit);
+    const { pay_at, sort_by, order, page, limit } = req?.query;
+
+    let firstDay, lastDay;
+    if (pay_at) {
+      const payAt = new Date(pay_at);
+      firstDay = new Date(payAt.getFullYear(), payAt.getMonth(), 1);
+      lastDay = new Date(payAt.getFullYear(), payAt.getMonth() + 1, 0);
+    }
+
+    const data = await model.getTotalIncome(
+      firstDay,
+      lastDay,
+      sort_by,
+      order,
+      page,
+      limit,
+    );
     res.send({
       status: true,
       message: "Get data success",
@@ -253,6 +270,20 @@ const create = async (req, res) => {
     }
     let data = value;
 
+    if (data.details_payment) {
+      const sum =
+        data.details_payment.rt +
+        data.details_payment.pkk +
+        data.details_payment.sosial +
+        data.details_payment.kematian;
+      if (sum !== data.nominal) {
+        return res.status(400).send({
+          status: false,
+          message: `Total rincian (${sum}) tidak sama dengan nominal (${data.nominal}).`,
+        });
+      }
+    }
+
     // check existing payment (off dulu)
     // const existingPayment = await model.getByWargaAndPeriod(
     //   data.warga_id,
@@ -269,14 +300,22 @@ const create = async (req, res) => {
     const dataWarga = await collWarga.findOne({
       _id: new ObjectId(data?.warga_id),
     });
-    data.warga = new wargaDataEmbed(dataWarga);
+    data.warga = new WargaDataEmbed(dataWarga);
 
     data = getNumberOfPeriods(data);
     data = getDetailsPayment(data);
 
-    const payment = new paymentEntity(data);
+    const payment = new PaymentEntity(data);
     const insertedId = await model.create(payment);
     if (insertedId) {
+      await createLog(
+        req,
+        "CREATE",
+        "IURAN",
+        `Mencatat Iuran sebesar Rp${data.nominal}`,
+        null,
+        data,
+      );
       res.send({
         status: true,
         message: "Payment created successfully",
@@ -309,16 +348,39 @@ const update = async (req, res) => {
     }
     let data = value;
 
+    if (data.details_payment) {
+      const sum =
+        data.details_payment.rt +
+        data.details_payment.pkk +
+        data.details_payment.sosial +
+        data.details_payment.kematian;
+      if (sum !== data.nominal) {
+        return res.status(400).send({
+          status: false,
+          message: `Total rincian (${sum}) tidak sama dengan nominal (${data.nominal}).`,
+        });
+      }
+    }
+
     const dataWarga = await collWarga.findOne({
       _id: new ObjectId(data?.warga_id),
     });
-    data.warga = new wargaDataEmbed(dataWarga);
+    data.warga = new WargaDataEmbed(dataWarga);
 
     data = getNumberOfPeriods(data);
     data = getDetailsPayment(data);
 
+    const oldData = await model.getByID(data.id);
     const isUpdated = await model.update(data);
     if (isUpdated) {
+      await createLog(
+        req,
+        "UPDATE",
+        "IURAN",
+        `Mengubah data Iuran ID ${data.id}`,
+        oldData,
+        data,
+      );
       res.send({
         status: true,
         message: "Payment updated successfully",
@@ -349,8 +411,17 @@ const deletePayment = async (req, res) => {
       });
     }
     const { id } = value;
+    const oldData = await model.getByID(id);
     const isDeleted = await model.deletePayment(id);
     if (isDeleted) {
+      await createLog(
+        req,
+        "DELETE",
+        "IURAN",
+        `Menghapus data Iuran ID ${id}`,
+        oldData,
+        null,
+      );
       res.send({
         status: true,
         message: "Payment deleted successfully",

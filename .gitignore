@@ -1,6 +1,2 @@
 node_modules
 .env
-
-# Docs
-docs/*
-!docs/TECHNICAL_REVIEW.md

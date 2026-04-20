@@ -1,20 +1,20 @@
-class SignUpResponse {
+class signUpResponse {
   constructor(data) {
-    this._id = data?._id;
-    this.name = data?.name;
-    this.email = data?.email;
-    this.role = data?.role;
-    this.createdAt = data?.created_at;
+    this._id = data?._id
+    this.name = data?.name
+    this.email = data?.email
+    this.role = data?.role
+    this.createdAt = data?.created_at
   }
 }
 
-class SignInResponse {
+class signInResponse {
   constructor(data) {
-    this._id = data?._id;
-    this.name = data?.name;
-    this.email = data?.email;
-    this.role = data?.role;
+    this._id = data?._id
+    this.name = data?.name
+    this.email = data?.email
+    this.role = data?.role
   }
 }
 
-module.exports = { SignUpResponse, SignInResponse };
+module.exports = { signUpResponse, signInResponse }

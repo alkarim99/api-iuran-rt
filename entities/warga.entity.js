@@ -1,22 +1,22 @@
-const { ObjectId } = require("mongodb");
+const { ObjectId } = require("mongodb")
 
-class WargaEntity {
+class wargaEntity {
   constructor(data) {
-    this._id = new ObjectId();
-    this.name = data?.name;
-    this.address = data?.address;
-    this.created_at = new Date();
-    this.updated_at = new Date();
-    this._class = "Warga";
+    this._id = new ObjectId()
+    this.name = data?.name
+    this.address = data?.address
+    this.created_at = new Date()
+    this.updated_at = new Date()
+    this._class = "Warga"
   }
 }
 
-class WargaDataEmbed {
+class wargaDataEmbed {
   constructor(data) {
-    this._id = data?._id;
-    this.name = data?.name;
-    this.address = data?.address;
+    this._id = data?._id
+    this.name = data?.name
+    this.address = data?.address
   }
 }
 
-module.exports = { WargaEntity, WargaDataEmbed };
+module.exports = { wargaEntity, wargaDataEmbed }

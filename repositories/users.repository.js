@@ -1,77 +1,64 @@
-const { ObjectId } = require("mongodb");
-const { collUser } = require("../config/database");
+const { ObjectId } = require("mongodb")
+const { collUser } = require("../config/database")
 
-const getAll = async (page = 1, limit = 20) => {
+const getAll = async () => {
   try {
-    page = parseInt(page) || 1;
-    limit = Math.min(parseInt(limit) || 20, 100);
-    const data = await collUser
-      .find({})
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .toArray();
-    const totalItems = await collUser.countDocuments({});
-    return {
-      currentPage: page,
-      totalPages: Math.ceil(totalItems / limit),
-      totalCount: totalItems,
-      perPage: limit,
-      data,
-    };
+    const data = await collUser.find({}).toArray()
+    return data
   } catch (err) {
-    console.error("Error connecting to MongoDB:", err);
-    throw err;
+    console.error("Error connecting to MongoDB:", err)
+    throw err
   }
-};
+}
 
 const getByID = async (id) => {
   try {
-    const data = await collUser.findOne({ _id: new ObjectId(id) });
-    return data;
+    const data = await collUser.findOne({ _id: new ObjectId(id) })
+    return data
   } catch (err) {
-    console.error("Error connecting to MongoDB:", err);
-    throw err;
+    console.error("Error connecting to MongoDB:", err)
+    throw err
   }
-};
+}
 
 const getByEmail = async (email) => {
   try {
-    const data = await collUser.findOne({ email });
-    return data;
+    const data = await collUser.findOne({ email })
+    return data
   } catch (err) {
-    console.error("Error connecting to MongoDB:", err);
-    throw err;
+    console.error("Error connecting to MongoDB:", err)
+    throw err
   }
-};
+}
 
 const isEmailUnique = async (email, id) => {
   try {
-    let emails;
+    let emails
     if (id) {
       emails = await collUser.findOne({
         email,
         _id: { $ne: new ObjectId(id) },
-      });
+      })
     } else {
-      emails = await collUser.findOne({ email });
+      emails = await collUser.findOne({ email })
     }
-    const isEmailUnique = emails != null;
-    return isEmailUnique;
+    const isEmailUnique = emails != null
+    return isEmailUnique
   } catch (err) {
-    console.error("Error connecting to MongoDB:", err);
-    throw err;
+    console.error("Error connecting to MongoDB:", err)
+    throw err
   }
-};
+}
 
 const create = async (data) => {
   try {
-    const result = await collUser.insertOne(data);
-    return result.insertedId;
+    const result = await collUser.insertOne(data)
+    return result.insertedId
   } catch (err) {
-    console.error("Error creating user:", err);
-    throw err;
+    console.error("Error creating user:", err)
+    throw err
   }
-};
+}
 
 const update = async (data) => {
   try {
@@ -83,27 +70,27 @@ const update = async (data) => {
         role: data?.role,
         updated_at: new Date(),
       },
-    };
+    }
     const result = await collUser.updateOne(
       { _id: new ObjectId(data?.id) },
-      updateData,
-    );
-    return result.modifiedCount > 0;
+      updateData
+    )
+    return result.modifiedCount > 0
   } catch (err) {
-    console.error("Error updating user:", err);
-    throw err;
+    console.error("Error updating user:", err)
+    throw err
   }
-};
+}
 
 const deleteUser = async (id) => {
   try {
-    const result = await collUser.deleteOne({ _id: new ObjectId(id) });
-    return result.deletedCount > 0; // Return true if a document was deleted
+    const result = await collUser.deleteOne({ _id: new ObjectId(id) })
+    return result.deletedCount > 0 // Return true if a document was deleted
   } catch (err) {
-    console.error("Error deleting user:", err);
-    throw err;
+    console.error("Error deleting user:", err)
+    throw err
   }
-};
+}
 
 module.exports = {
   getAll,
@@ -113,4 +100,4 @@ module.exports = {
   create,
   update,
   deleteUser,
-};
+}

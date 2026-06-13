@@ -31,7 +31,7 @@ const filterSchema = Joi.object({
   order: Joi.number(),
   page: Joi.number(),
   limit: Joi.number(),
-});
+}).unknown(true);
 
 const reportRangeSchema = Joi.object({
   // Format: YYYY-MM-DD, contoh: 2025-01-01

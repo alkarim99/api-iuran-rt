@@ -18,9 +18,9 @@ const updateSchema = Joi.object({
 const filterSchema = Joi.object({
   keyword: Joi.string(),
   sort_by: Joi.string(),
-  order: Joi.string(),
+  order: Joi.number(),
   page: Joi.number(),
   limit: Joi.number(),
-})
+}).unknown(true)
 
 module.exports = { idSchema, createSchema, updateSchema, filterSchema }

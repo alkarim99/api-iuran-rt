@@ -10,14 +10,48 @@ jobs:
     steps:
       - name: Deploy
         run: |
+          set -e
+
+          send_telegram() {
+            curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+              -d chat_id="${TELEGRAM_CHAT_ID}" \
+              -d text="$1" \
+              -d parse_mode="HTML" > /dev/null
+          }
+
           BRANCH=${{ github.ref_name }}
+          NOW=$(date "+%Y-%m-%d %H:%M:%S")
+          send_telegram "🚀 api-iuran-rt mulai di-deploy%0A🕐 ${NOW}"
+
           cd $HOME/services/iuran-rt/api-iuran-rt
-          git checkout $BRANCH && git pull
+          echo "📦 Pulling api-iuran-rt (${BRANCH})..."
+          git checkout ${BRANCH} && git pull
+
           cd ../iuran-rt-apps
-          if [ "$BRANCH" = "dev" ]; then
+          if [ "${BRANCH}" = "dev" ]; then
+            echo "📦 Pulling iuran-rt-apps (feat/ui-redesign)..."
             git checkout feat/ui-redesign && git pull
           else
-            git checkout $BRANCH && git pull
+            echo "📦 Pulling iuran-rt-apps (${BRANCH})..."
+            git checkout ${BRANCH} && git pull
           fi
+
           cd ../api-iuran-rt
+          echo "🐳 Building & starting containers..."
           docker compose up -d --build
+
+          send_telegram "✅ api-iuran-rt berhasil di-deploy%0A🕐 ${NOW}"
+
+      - name: Notify Failure
+        if: failure()
+        run: |
+          send_telegram() {
+            curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+              -d chat_id="${TELEGRAM_CHAT_ID}" \
+              -d text="$1" \
+              -d parse_mode="HTML" > /dev/null
+          }
+          send_telegram "❌ api-iuran-rt gagal di-deploy%0A🕐 $(date "+%Y-%m-%d %H:%M:%S")%0A🔗 ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+    env:
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}

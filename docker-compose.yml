@@ -7,6 +7,10 @@ services:
       - "8002:8000"
     env_file:
       - ./.env
+    command: node --watch index.js
+    volumes:
+      - ./:/app
+      - /app/node_modules
     networks:
       - iuran-rt-network
 

@@ -1,0 +1,17 @@
+name: Deploy
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Deploy
+        run: |
+          cd $HOME/services/iuran-rt/api-iuran-rt
+          git pull
+          cd ../iuran-rt-apps && git pull
+          cd ../api-iuran-rt
+          docker compose up -d --build

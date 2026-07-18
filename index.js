@@ -40,6 +40,7 @@ app.get("/", (req, res) => {
 // Other routes
 app.use(invalidRoutes)
 
-app.listen(8000, () => {
-  console.log(`App running in port 8000 ${process.env.NODE_ENV}`)
+const PORT = process.env.PORT || 8000
+app.listen(PORT, () => {
+  console.log(`App running in port ${PORT} ${process.env.NODE_ENV}`)
 })

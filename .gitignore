@@ -4,3 +4,4 @@ node_modules
 # Docs
 docs/*
 !docs/TECHNICAL_REVIEW.md
+actions-runner

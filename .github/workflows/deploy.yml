@@ -1,0 +1,23 @@
+name: Deploy
+
+on:
+  push:
+    branches: [master, dev]
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Deploy
+        run: |
+          BRANCH=${{ github.ref_name }}
+          cd $HOME/services/iuran-rt/api-iuran-rt
+          git checkout $BRANCH && git pull
+          cd ../iuran-rt-apps
+          if [ "$BRANCH" = "dev" ]; then
+            git checkout feat/ui-redesign && git pull
+          else
+            git checkout $BRANCH && git pull
+          fi
+          cd ../api-iuran-rt
+          docker compose up -d --build

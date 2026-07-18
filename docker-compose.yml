@@ -15,7 +15,10 @@ services:
       - iuran-rt-network
 
   web:
-    build: ../iuran-rt-apps
+    build:
+      context: ../iuran-rt-apps
+      args:
+        REACT_APP_API_URL: ${REACT_APP_API_URL:-}
     container_name: iuran-rt-web
     restart: unless-stopped
     ports:

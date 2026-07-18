@@ -3,6 +3,8 @@ name: Deploy
 on:
   push:
     branches: [master, dev]
+  repository_dispatch:
+    types: [deploy-fe]
 
 jobs:
   deploy:
@@ -19,39 +21,52 @@ jobs:
               -d parse_mode="HTML" > /dev/null
           }
 
-          BRANCH=${{ github.ref_name }}
-          NOW=$(date "+%Y-%m-%d %H:%M:%S")
-          send_telegram "🚀 api-iuran-rt mulai di-deploy%0A🕐 ${NOW}"
-
-          cd $HOME/services/iuran-rt/api-iuran-rt
-          echo "📦 Pulling api-iuran-rt (${BRANCH})..."
-          git checkout ${BRANCH} && git pull
-
-          cd ../iuran-rt-apps
-          if [ "${BRANCH}" = "dev" ]; then
-            echo "📦 Pulling iuran-rt-apps (feat/ui-redesign)..."
-            git checkout feat/ui-redesign && git pull
+          # ---- Tentukan branch FE & BE ----
+          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            FE_BRANCH=${{ github.event.client_payload.branch }}
+            if [ "${FE_BRANCH}" = "feat/ui-redesign" ]; then
+              BE_BRANCH="dev"
+            else
+              BE_BRANCH="master"
+            fi
+            TRIGGER_SOURCE="FE (${FE_BRANCH})"
           else
-            echo "📦 Pulling iuran-rt-apps (${BRANCH})..."
-            git checkout ${BRANCH} && git pull
+            BE_BRANCH=${{ github.ref_name }}
+            if [ "${BE_BRANCH}" = "dev" ]; then
+              FE_BRANCH="feat/ui-redesign"
+            else
+              FE_BRANCH="master"
+            fi
+            TRIGGER_SOURCE="BE (${BE_BRANCH})"
           fi
 
-          cd ../api-iuran-rt
+          NOW=$(date "+%Y-%m-%d %H:%M:%S")
+          send_telegram "🚀 Deploy mulai (${TRIGGER_SOURCE})%0A🕐 ${NOW}"
+
+          cd $HOME/services/iuran-rt
+
+          echo "📦 Pulling iuran-rt-apps (${FE_BRANCH})..."
+          cd iuran-rt-apps
+          git checkout ${FE_BRANCH} && git pull
+          cd ..
+
+          echo "📦 Pulling api-iuran-rt (${BE_BRANCH})..."
+          cd api-iuran-rt
+          git checkout ${BE_BRANCH} && git pull
+
           echo "🐳 Building & starting containers..."
           docker compose up -d --build
 
-          send_telegram "✅ api-iuran-rt berhasil di-deploy%0A🕐 ${NOW}"
+          send_telegram "✅ Deploy sukses%0A🕐 $(date "+%Y-%m-%d %H:%M:%S")"
 
       - name: Notify Failure
         if: failure()
         run: |
-          send_telegram() {
-            curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
-              -d chat_id="${TELEGRAM_CHAT_ID}" \
-              -d text="$1" \
-              -d parse_mode="HTML" > /dev/null
-          }
-          send_telegram "❌ api-iuran-rt gagal di-deploy%0A🕐 $(date "+%Y-%m-%d %H:%M:%S")%0A🔗 ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -d chat_id="${TELEGRAM_CHAT_ID}" \
+            -d parse_mode="HTML" \
+            -d text="❌ Deploy gagal%0A🕐 $(date "+%Y-%m-%d %H:%M:%S")%0A🔗 ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            > /dev/null
     env:
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}

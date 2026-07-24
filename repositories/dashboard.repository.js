@@ -103,18 +103,34 @@ const getTunggakan = async (targetMonth) => {
       lastPayments.map((lp) => [lp._id.toString(), lp.last_payment]),
     );
 
-    // Step 5: Hitung bulan nunggak & potensi nominal
+    // Step 5a: Cari modus nominal per bulan dari data pembayaran existing
+    const modeResult = await collPayment
+      .aggregate([
+        {
+          $project: {
+            nominal_per_month: { $divide: ["$nominal", "$number_of_period"] },
+          },
+        },
+        { $group: { _id: "$nominal_per_month", count: { $sum: 1 } } },
+        { $sort: { count: -1 } },
+        { $limit: 1 },
+      ])
+      .toArray();
+    const defaultNominal =
+      modeResult.length > 0 ? modeResult[0]._id : 110000;
+
+    // Step 5b: Hitung bulan nunggak & potensi nominal
     const data = tunggakanWarga.map((w) => {
       const lastPay = lastPaymentMap.get(w._id.toString());
 
       if (!lastPay) {
-        // Belum pernah bayar sama sekali
+        // Belum pernah bayar sama sekali — pakai modus nominal warga lain
         return {
           warga_id: w._id,
           name: w.name,
           address: w.address,
           bulan_nunggak: 1,
-          potensi_nominal: 110000, // Default Tier 2
+          potensi_nominal: defaultNominal,
           last_payment_period: null,
         };
       }
